@@ -1,26 +1,93 @@
 @import "tailwindcss";
 
+/* Light mode only. Contrast: ink/canvas 16.9:1, muted/canvas 4.6:1, muted/white 4.8:1, white/brand-700 5.5:1. */
+@theme {
+  --color-canvas: #f8fafc;
+  --color-surface: #ffffff;
+  --color-line: #e5e7eb;
+  --color-ink: #111827;
+  --color-muted: #6b7280;
+  --color-brand-50: #ecfdf5;
+  --color-brand-100: #d1fae5;
+  --color-brand-500: #10b981;
+  --color-brand-700: #047857;
+  --color-brand-900: #064e3b;
+  --color-danger: #b91c1c;
+
+  --font-sans: var(--font-inter), var(--font-georgian), ui-sans-serif, system-ui, sans-serif;
+
+  --shadow-soft: 0 1px 2px rgb(17 24 39 / 0.04), 0 4px 16px rgb(17 24 39 / 0.05);
+}
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  color-scheme: light;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  background: var(--color-canvas);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-canvas);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* One visible, consistent focus ring for keyboard users. */
+:focus-visible {
+  outline: 3px solid var(--color-brand-500);
+  outline-offset: 2px;
+  border-radius: 12px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+@utility card {
+  @apply rounded-3xl border border-line bg-surface p-6 shadow-soft;
+}
+@utility btn {
+  @apply inline-flex items-center justify-center gap-2 rounded-2xl px-4 py-2.5 text-sm font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-60;
+}
+@utility btn-primary {
+  @apply btn bg-brand-700 text-white hover:bg-brand-900;
+}
+@utility btn-secondary {
+  @apply btn border border-line bg-surface text-ink hover:bg-canvas;
+}
+@utility btn-danger {
+  @apply btn border border-line bg-surface text-danger hover:bg-red-50;
+}
+@utility input {
+  @apply w-full rounded-2xl border border-line bg-surface px-4 py-2.5 text-sm text-ink placeholder:text-muted focus:border-brand-500;
+}
+@utility label {
+  @apply mb-1.5 block text-sm font-medium text-ink;
+}
+@utility field-error {
+  @apply mt-1 text-sm text-danger;
+}
+
+@layer components {
+  .prose-legal h2 {
+    @apply mt-10 mb-3 text-xl font-semibold text-ink;
+  }
+  .prose-legal p,
+  .prose-legal li {
+    @apply mb-3 leading-7 text-muted;
+  }
+  .prose-legal ul {
+    @apply list-disc pl-6;
+  }
+  .prose-legal a {
+    @apply font-medium text-brand-700 underline underline-offset-2;
+  }
 }

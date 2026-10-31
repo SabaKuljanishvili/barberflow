@@ -36,7 +36,7 @@ export function CookieBanner() {
       <h2 className="text-base font-semibold text-ink">{t.cookies.title}</h2>
       <p className="mt-1 text-sm text-muted">
         {t.cookies.body}{" "}
-        <Link href="/legal/cookies" className="font-medium text-brand-700 underline underline-offset-2">
+        <Link href="/legal/cookies" className="font-medium text-accent underline underline-offset-2">
           {t.cookies.policy}
         </Link>
         .

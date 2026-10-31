@@ -3,13 +3,14 @@ import { fmt } from "@/i18n/config";
 import { getI18n } from "@/i18n/server";
 import { site } from "@/lib/site";
 
-export async function LogoMark({ className = "size-9" }: { className?: string }) {
-  const { t } = await getI18n();
+export function ScissorsIcon({ size = 17 }: { size?: number }) {
   return (
-    <svg viewBox="0 0 32 32" className={className} role="img" aria-label={fmt(t.meta.logoAlt, { site: site.name })}>
-      <rect width="32" height="32" rx="10" fill="#064E3B" />
-      <path d="M10 8h3v16h-3zM19 8h3v16h-3z" fill="#10B981" />
-      <path d="M8 13l16-4v3L8 16zM8 20l16-4v3L8 23z" fill="#fff" />
+    <svg aria-hidden="true" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="6" cy="6" r="3" />
+      <circle cx="6" cy="18" r="3" />
+      <line x1="20" y1="4" x2="8.12" y2="15.88" />
+      <line x1="14.47" y1="14.48" x2="20" y2="20" />
+      <line x1="8.12" y1="8.12" x2="12" y2="12" />
     </svg>
   );
 }
@@ -18,8 +19,10 @@ export async function Logo({ href = "/" }: { href?: string }) {
   const { t } = await getI18n();
   return (
     <Link href={href} className="flex items-center gap-2.5 rounded-2xl" aria-label={fmt(t.meta.logoHome, { site: site.name })}>
-      <LogoMark />
-      <span className="text-lg font-bold tracking-tight text-ink">{site.name}</span>
+      <span aria-hidden className="flex size-[34px] shrink-0 items-center justify-center rounded-full bg-brand text-on-brand">
+        <ScissorsIcon />
+      </span>
+      <span className="font-serif text-[19px] font-semibold tracking-tight text-ink">{site.name}</span>
     </Link>
   );
 }

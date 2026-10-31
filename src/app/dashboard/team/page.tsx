@@ -41,7 +41,7 @@ export default async function TeamPage() {
                   <p className="text-sm text-muted">{m.email}</p>
                 </div>
                 <div className="flex items-center gap-3">
-                  <span className="rounded-full bg-brand-50 px-2.5 py-1 text-xs font-medium text-brand-900">{t.roles[m.role]}</span>
+                  <span className="rounded-full bg-brand-soft px-2.5 py-1 text-xs font-medium text-accent">{t.roles[m.role]}</span>
                   {m.id !== userId && (
                     <ActionForm action={removeStaff} resetOnSuccess={false} className="flex flex-col items-end gap-1" aria-label={fmt(p.removeLabel, { name: m.full_name })}>
                       <input type="hidden" name="id" value={m.id} />

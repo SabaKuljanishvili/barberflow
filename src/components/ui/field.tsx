@@ -86,7 +86,7 @@ export function FormMessage({ state }: { state: { ok: boolean; message?: string 
   return (
     <p
       role={state.ok ? "status" : "alert"}
-      className={`rounded-2xl px-4 py-3 text-sm ${state.ok ? "bg-brand-50 text-brand-900" : "bg-red-50 text-danger"}`}
+      className={`rounded-2xl px-4 py-3 text-sm ${state.ok ? "bg-brand-soft text-accent" : "bg-danger-soft text-danger"}`}
     >
       {state.message}
     </p>

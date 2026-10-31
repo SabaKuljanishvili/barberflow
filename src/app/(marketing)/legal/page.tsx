@@ -18,7 +18,7 @@ export default async function LegalIndex() {
       <ul className="mt-8 grid gap-4 sm:grid-cols-2">
         {legalPages.map((p) => (
           <li key={p.href}>
-            <Link href={p.href} className="card block h-full hover:border-brand-500">
+            <Link href={p.href} className="card block h-full hover:border-accent">
               <h2 className="text-lg font-semibold">{t.legal.pages[p.key].title}</h2>
               <p className="mt-2 text-sm text-muted">{t.legal.pages[p.key].summary}</p>
             </Link>

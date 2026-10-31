@@ -12,6 +12,8 @@ export const OG_LOCALE: Record<Locale, string> = { ka: "ka_GE", en: "en_US" };
 
 /** Each language named in itself, as a switcher should show it. */
 export const LOCALE_NAMES: Record<Locale, string> = { ka: "ქართული", en: "English" };
+/** Short labels for compact toggles. "GE" is what Georgian users expect to see. */
+export const LOCALE_CODES: Record<Locale, string> = { ka: "GE", en: "EN" };
 
 export function isLocale(value: unknown): value is Locale {
   return typeof value === "string" && (LOCALES as readonly string[]).includes(value);

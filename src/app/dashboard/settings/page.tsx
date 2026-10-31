@@ -50,8 +50,8 @@ export default async function SettingsPage() {
             <legend className="label">{p.openDays}</legend>
             <div className="flex flex-wrap gap-2">
               {t.days.map((d, i) => (
-                <label key={d} className="flex cursor-pointer items-center gap-2 rounded-2xl border border-line px-3 py-2 text-sm has-[:checked]:border-brand-500 has-[:checked]:bg-brand-50">
-                  <input type="checkbox" name="workingDays" value={i + 1} defaultChecked={salon.working_days.includes(i + 1)} className="accent-brand-700" />
+                <label key={d} className="flex cursor-pointer items-center gap-2 rounded-2xl border border-line px-3 py-2 text-sm has-[:checked]:border-accent has-[:checked]:bg-brand-soft">
+                  <input type="checkbox" name="workingDays" value={i + 1} defaultChecked={salon.working_days.includes(i + 1)} className="accent-brand" />
                   {d}
                 </label>
               ))}
@@ -72,7 +72,7 @@ export default async function SettingsPage() {
             ))}
           </SelectField>
           <label className="flex items-center gap-3 text-sm">
-            <input type="checkbox" name="voiceAgentEnabled" defaultChecked={salon.voice_agent_enabled} className="size-4 accent-brand-700" />
+            <input type="checkbox" name="voiceAgentEnabled" defaultChecked={salon.voice_agent_enabled} className="size-4 accent-brand" />
             {p.enabled}
           </label>
           <div className="rounded-2xl bg-canvas p-4 text-sm text-muted">

@@ -17,17 +17,17 @@ function TermsCheckbox() {
           name="acceptTerms"
           type="checkbox"
           required
-          className="mt-1 size-4 rounded accent-brand-700"
+          className="mt-1 size-4 rounded accent-brand"
           aria-invalid={errors ? true : undefined}
           aria-describedby={errors ? "acceptTerms-error" : undefined}
         />
         <label htmlFor="acceptTerms" className="text-sm text-muted">
           {t.signup.agree}{" "}
-          <Link href="/legal/terms" className="font-medium text-brand-700 underline underline-offset-2">
+          <Link href="/legal/terms" className="font-medium text-accent underline underline-offset-2">
             {t.signup.terms}
           </Link>{" "}
           {t.signup.andRead}{" "}
-          <Link href="/legal/privacy" className="font-medium text-brand-700 underline underline-offset-2">
+          <Link href="/legal/privacy" className="font-medium text-accent underline underline-offset-2">
             {t.signup.privacy}
           </Link>
           .
@@ -64,7 +64,7 @@ export function SignupForm() {
       </PendingButton>
       <p className="text-center text-sm text-muted">
         {t.signup.haveAccount}{" "}
-        <Link href="/login" className="font-medium text-brand-700 underline underline-offset-2">
+        <Link href="/login" className="font-medium text-accent underline underline-offset-2">
           {t.signup.signIn}
         </Link>
       </p>

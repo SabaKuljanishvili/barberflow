@@ -3,13 +3,15 @@
 import Link from "next/link";
 import { useI18n } from "@/i18n/client";
 import { fmt } from "@/i18n/config";
+import { ThemeToggle } from "@/components/theme/theme-toggle";
 
 // Never render error.message: in production it is redacted, and in general
 // it may contain internals. The digest lets support match server logs.
 export default function ErrorBoundary({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
   const { t } = useI18n();
   return (
-    <main id="main" className="flex min-h-[60dvh] items-center justify-center px-4">
+    <main id="main" className="flex min-h-[60dvh] flex-col items-center justify-center gap-6 px-4">
+      <ThemeToggle />
       <div className="card max-w-md p-10 text-center">
         <h1 className="text-2xl font-bold tracking-tight">{t.error.title}</h1>
         <p className="mt-3 text-muted">{t.error.body}</p>

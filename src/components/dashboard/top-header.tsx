@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Bell, ChevronDown, Search } from "lucide-react";
 import { LocaleSwitcher } from "@/components/locale-switcher";
+import { ThemeToggle } from "@/components/theme/theme-toggle";
 import { INTL_LOCALE, fmt } from "@/i18n/config";
 import { getI18n } from "@/i18n/server";
 import type { StaffRole } from "@/lib/supabase/database.types";
@@ -49,6 +50,7 @@ export async function TopHeader({
       </form>
 
       <LocaleSwitcher />
+      <ThemeToggle />
 
       <details className="relative">
         <summary
@@ -57,7 +59,7 @@ export async function TopHeader({
         >
           <Bell aria-hidden className="size-5 text-ink" />
           {pending.length > 0 && (
-            <span aria-hidden className="absolute top-2 right-2 size-2.5 rounded-full bg-brand-500 ring-2 ring-white" />
+            <span aria-hidden className="absolute top-2 right-2 size-2.5 rounded-full bg-accent ring-2 ring-surface" />
           )}
         </summary>
         <div className="absolute right-0 z-20 mt-2 w-80 rounded-3xl border border-line bg-surface p-4 shadow-soft">
@@ -74,7 +76,7 @@ export async function TopHeader({
           ) : (
             <p className="mt-2 text-sm text-muted">{h.caughtUp}</p>
           )}
-          <Link href="/dashboard/appointments?status=pending" className="mt-3 inline-block text-sm font-medium text-brand-700">
+          <Link href="/dashboard/appointments?status=pending" className="mt-3 inline-block text-sm font-medium text-accent">
             {h.viewPending}
           </Link>
         </div>
@@ -84,7 +86,7 @@ export async function TopHeader({
         <summary className="flex cursor-pointer list-none items-center gap-2 rounded-2xl border border-line py-1.5 pr-3 pl-1.5 hover:bg-canvas">
           <span
             aria-hidden
-            className="flex size-8 items-center justify-center rounded-xl bg-brand-50 text-xs font-bold text-brand-900"
+            className="flex size-8 items-center justify-center rounded-xl bg-brand-soft text-xs font-bold text-accent"
           >
             {initials}
           </span>
@@ -101,7 +103,7 @@ export async function TopHeader({
             {h.account}
           </Link>
           <form action="/auth/signout" method="post">
-            <button type="submit" className="block w-full rounded-2xl px-3 py-2 text-left text-sm text-danger hover:bg-red-50">
+            <button type="submit" className="block w-full rounded-2xl px-3 py-2 text-left text-sm text-danger hover:bg-danger-soft">
               {h.signOut}
             </button>
           </form>

@@ -72,9 +72,10 @@ export async function proxy(request: NextRequest) {
     });
     // Refreshes the session cookie. Authorization is still enforced in each
     // page (requireUser/requireManager) and by RLS; this is only a fast path.
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    // getClaims() verifies the JWT locally with asymmetric signing keys, so
+    // most requests skip the round trip to the Auth server.
+    const { data } = await supabase.auth.getClaims();
+    const user = data?.claims.sub;
 
     if (needsAuth && !user) {
       const login = new URL("/login", request.url);

@@ -1,21 +1,30 @@
 "use client";
 
 import { useFormStatus } from "react-dom";
-import { Languages } from "lucide-react";
 import { setLocale } from "@/i18n/actions";
 import { useI18n } from "@/i18n/client";
-import { LOCALES, LOCALE_NAMES, type Locale } from "@/i18n/config";
+import { LOCALES, LOCALE_CODES, LOCALE_NAMES, type Locale } from "@/i18n/config";
 
-/** Two-option toggle. A plain server-action form, so it also works before hydration. */
+/**
+ * Compact segmented "GE | EN" toggle with a sliding thumb. Short codes keep it
+ * small; each button still carries the language's full name for screen
+ * readers and as a tooltip. A plain server-action form, so it also works
+ * before hydration.
+ */
 export function LocaleSwitcher({ className = "" }: { className?: string }) {
   const { locale, t } = useI18n();
+  const index = LOCALES.indexOf(locale);
   return (
     <form
       action={setLocale}
-      className={`inline-flex items-center gap-1 rounded-2xl border border-line bg-surface p-1 ${className}`}
+      className={`relative inline-grid shrink-0 grid-cols-2 rounded-full border border-line p-[3px] ${className}`}
       aria-label={t.switcher.label}
     >
-      <Languages aria-hidden className="ml-1.5 size-4 text-muted" />
+      <span
+        aria-hidden
+        className="absolute inset-y-[3px] left-[3px] w-[calc(50%-3px)] rounded-full bg-ink transition-transform duration-300 ease-out"
+        style={{ transform: `translateX(${index * 100}%)` }}
+      />
       {LOCALES.map((l) => (
         <Option key={l} value={l} active={l === locale} />
       ))}
@@ -32,12 +41,14 @@ function Option({ value, active }: { value: Locale; active: boolean }) {
       value={value}
       lang={value}
       aria-pressed={active}
+      aria-label={LOCALE_NAMES[value]}
+      title={LOCALE_NAMES[value]}
       disabled={pending}
-      className={`rounded-xl px-2.5 py-1 text-xs font-medium transition-colors ${
-        active ? "bg-brand-900 text-white" : "text-muted hover:bg-canvas hover:text-ink"
-      }`}
+      className={`relative z-10 min-w-9 rounded-full px-2.5 py-1 text-xs leading-[1.65] font-bold transition-colors duration-300 ${
+        active ? "text-canvas" : "text-muted hover:text-ink"
+      } ${pending && !active ? "opacity-60" : ""}`}
     >
-      {LOCALE_NAMES[value]}
+      {LOCALE_CODES[value]}
     </button>
   );
 }

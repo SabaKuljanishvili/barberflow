@@ -3,7 +3,7 @@ import { money, spokenMoney } from "./format";
 import { splitE164 } from "./phone-countries";
 import { en } from "@/i18n/dictionaries/en";
 import { ka } from "@/i18n/dictionaries/ka";
-import { bookingClientSchema, normalizePhone, parseIn, passwordSchema, salonSettingsSchema, sanitizeText, serviceSchema, signupSchema, toFormState, withDateTime, withDialCode, withTime } from "./validation";
+import { appointmentSchema, bookingClientSchema, normalizePhone, parseIn, passwordSchema, salonSettingsSchema, sanitizeText, serviceSchema, signupSchema, toFormState, withDateTime, withDialCode, withTime } from "./validation";
 
 describe("localized errors", () => {
   it("translates custom message keys", () => {
@@ -106,6 +106,19 @@ describe("signupSchema", () => {
   });
   it("does not let markup through unchanged length limits", () => {
     expect(signupSchema.safeParse({ ...valid, salonName: "x".repeat(121) }).success).toBe(false);
+  });
+});
+
+describe("appointmentSchema", () => {
+  const base = { serviceId: "3f1c2a4e-8b7d-4c6a-9e2f-1a2b3c4d5e6f", localTime: "2026-11-02T10:00" };
+
+  it("makes the barber optional", () => {
+    expect(appointmentSchema.parse({ ...base, staffId: "" }).staffId).toBeUndefined();
+    expect(appointmentSchema.parse(base).staffId).toBeUndefined();
+  });
+
+  it("still rejects a malformed barber id", () => {
+    expect(appointmentSchema.safeParse({ ...base, staffId: "giorgi" }).success).toBe(false);
   });
 });
 

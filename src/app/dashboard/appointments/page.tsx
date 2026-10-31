@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Breadcrumbs } from "@/components/breadcrumbs";
+import { BarberPicker } from "@/components/dashboard/barber-picker";
 import { BookingClientFields } from "@/components/dashboard/booking-client-fields";
 import { StatusBadge } from "@/components/dashboard/status-badge";
 import { ActionForm, PendingButton } from "@/components/ui/action-form";
@@ -136,7 +137,7 @@ export default async function AppointmentsPage({
                       <tr key={a.id} className="border-b border-line align-top last:border-0">
                         <td className="py-3 pr-4 whitespace-nowrap">
                           <time dateTime={a.appointment_time}>{formatInZone(a.appointment_time, salon.timezone, {}, INTL_LOCALE[locale])}</time>
-                          {a.source === "voice" && <span className="block text-xs text-brand-700">{p.byPhone}</span>}
+                          {a.source === "voice" && <span className="block text-xs text-accent">{p.byPhone}</span>}
                         </td>
                         <td className="py-3 pr-4">
                           <span className="font-medium">{clientName(a.clients, t.dashboard.unknownClient)}</span>
@@ -204,18 +205,12 @@ export default async function AppointmentsPage({
                   </option>
                 ))}
               </SelectField>
-              <SelectField label={p.barber} name="staffId" required defaultValue={isManager ? "" : userId}>
-                {isManager && (
-                  <option value="" disabled>
-                    {p.chooseBarber}
-                  </option>
-                )}
-                {bookableStaff.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.full_name}
-                  </option>
-                ))}
-              </SelectField>
+              <BarberPicker
+                barbers={bookableStaff.map((s) => ({ id: s.id, name: s.full_name }))}
+                allowAny={isManager}
+                defaultValue={isManager ? "" : userId}
+                labels={{ label: isManager ? p.barberOptional : p.barber, any: p.anyBarber, anyHint: p.anyBarberHint, search: p.searchBarber, noMatch: p.noBarberMatch }}
+              />
               <DateTimeField
                 label={p.dateTime}
                 dateLabel={p.date}

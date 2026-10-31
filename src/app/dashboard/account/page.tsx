@@ -23,7 +23,7 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
       <Breadcrumbs structured={false} items={[{ href: "/dashboard", label: t.dashboard.nav.overview }, { href: "/dashboard/account", label: p.title }]} />
       <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">{p.title}</h1>
       {setPassword && (
-        <p role="status" className="rounded-2xl bg-brand-50 px-4 py-3 text-sm text-brand-900">
+        <p role="status" className="rounded-2xl bg-brand-soft px-4 py-3 text-sm text-accent">
           {p.welcome}
         </p>
       )}

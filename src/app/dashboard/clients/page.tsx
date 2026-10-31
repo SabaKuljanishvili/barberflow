@@ -74,7 +74,7 @@ export default async function ClientsPage({ searchParams }: { searchParams: Prom
                       <span>{fmt(p.visits, { n: h.visits })}</span>
                       {h.last && <span>{fmt(p.lastVisit, { date: day(h.last) })}</span>}
                       {h.next ? (
-                        <span className="font-medium text-brand-700">{fmt(p.nextVisit, { date: day(h.next) })}</span>
+                        <span className="font-medium text-accent">{fmt(p.nextVisit, { date: day(h.next) })}</span>
                       ) : (
                         <span>{fmt(p.added, { date: day(c.created_at) })}</span>
                       )}

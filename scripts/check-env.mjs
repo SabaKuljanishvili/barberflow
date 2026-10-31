@@ -34,6 +34,9 @@ if (process.env.NODE_ENV === "production" && process.env.NEXT_PUBLIC_SITE_URL?.s
 if (!process.env.AZURE_SPEECH_KEY || !process.env.AZURE_SPEECH_REGION) {
   console.warn("Warning: AZURE_SPEECH_KEY / AZURE_SPEECH_REGION not set. The phone agent will answer in English only.");
 }
+if (!process.env.ANTHROPIC_API_KEY && !process.env.GROQ_API_KEY) {
+  console.warn("Warning: neither ANTHROPIC_API_KEY nor GROQ_API_KEY set. The phone agent will only understand menu numbers and keywords.");
+}
 
 if (failures.length) {
   console.error(`Missing or invalid env vars:\n  - ${failures.join("\n  - ")}`);

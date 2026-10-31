@@ -18,7 +18,7 @@ export function LoginForm({ next }: { next?: string }) {
       </PendingButton>
       <p className="text-center text-sm text-muted">
         {t.login.newHere}{" "}
-        <Link href="/signup" className="font-medium text-brand-700 underline underline-offset-2">
+        <Link href="/signup" className="font-medium text-accent underline underline-offset-2">
           {t.login.signup}
         </Link>
       </p>

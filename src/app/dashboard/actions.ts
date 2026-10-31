@@ -8,7 +8,8 @@ import { getI18n } from "@/i18n/server";
 import { getSession, type SessionContext } from "@/lib/auth";
 import { siteUrl } from "@/lib/env";
 import { createSupabaseAdminClient, createSupabaseServerClient } from "@/lib/supabase/server";
-import { parseLocalDateTime, workingHoursProblem } from "@/lib/time";
+import { freeBarbersFor } from "@/lib/booking";
+import { parseLocalDateTime, workingHoursProblem, zonedDayBounds } from "@/lib/time";
 import {
   appointmentSchema,
   bookingClientSchema,
@@ -110,7 +111,9 @@ export async function createAppointment(_prev: FormState, formData: FormData): P
       const issues = [...(parsed.error?.issues ?? []), ...(who.error?.issues ?? [])];
       return toFormState(new z.ZodError(issues), t.validation);
     }
-    if (!isManager && parsed.data.staffId !== userId) return { ok: false, message: t.actions.ownChairOnly };
+    // Barbers always book their own chair, so "any" means themselves.
+    const staffId = parsed.data.staffId ?? (isManager ? undefined : userId);
+    if (!isManager && staffId !== userId) return { ok: false, message: t.actions.ownChairOnly };
 
     const start = parseLocalDateTime(parsed.data.localTime, salon.timezone);
     if (start.getTime() < Date.now() - 5 * 60_000) return { ok: false, message: t.actions.futureOnly };
@@ -151,19 +154,45 @@ export async function createAppointment(_prev: FormState, formData: FormData): P
       clientId = created.id;
     }
 
-    const { error } = await supabase.from("appointments").insert({
-      salon_id: salon.id,
-      client_id: clientId,
-      staff_id: parsed.data.staffId,
-      service_id: parsed.data.serviceId,
-      appointment_time: start.toISOString(),
-      status: "confirmed",
-      source: "dashboard",
-    });
-    if (error) return dbError(t, error.code, t.actions.bookFailed);
-    revalidatePath("/dashboard", "layout");
-    return { ok: true, message: t.actions.booked };
+    const end = new Date(start.getTime() + service.duration_minutes * 60_000);
+    const candidates = staffId ? [staffId] : await freeBarbers(supabase, salon, start, end);
+    if (!candidates.length) return { ok: false, message: t.actions.noBarberFree };
+
+    // With "any barber", a concurrent booking can take a candidate's slot
+    // between the check and the insert (23P01); then try the next one.
+    for (const candidate of candidates) {
+      const { error } = await supabase.from("appointments").insert({
+        salon_id: salon.id,
+        client_id: clientId,
+        staff_id: candidate,
+        service_id: parsed.data.serviceId,
+        appointment_time: start.toISOString(),
+        status: "confirmed",
+        source: "dashboard",
+      });
+      if (error?.code === "23P01" && !staffId) continue;
+      if (error) return dbError(t, error.code, t.actions.bookFailed);
+      revalidatePath("/dashboard", "layout");
+      return { ok: true, message: t.actions.booked };
+    }
+    return { ok: false, message: t.actions.noBarberFree };
   });
+}
+
+/** Barbers free for [start, end), least booked that salon day first. */
+async function freeBarbers(supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>, salon: SessionContext["salon"], start: Date, end: Date) {
+  const day = zonedDayBounds(start, salon.timezone);
+  const [staff, appts] = await Promise.all([
+    supabase.from("profiles").select("id").eq("salon_id", salon.id).order("full_name"),
+    supabase
+      .from("appointments")
+      .select("staff_id, appointment_time, ends_at")
+      .eq("salon_id", salon.id)
+      .in("status", ["pending", "confirmed"])
+      .gte("ends_at", day.start.toISOString())
+      .lt("appointment_time", day.end.toISOString()),
+  ]);
+  return freeBarbersFor(staff.data ?? [], appts.data ?? [], start, end);
 }
 
 export async function updateAppointmentStatus(_prev: FormState, formData: FormData): Promise<FormState> {

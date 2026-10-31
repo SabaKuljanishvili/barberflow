@@ -22,7 +22,7 @@ export async function Breadcrumbs({ items, structured = true }: { items: Crumb[]
                   </span>
                 ) : (
                   <>
-                    <Link href={item.href} className="rounded-lg hover:text-brand-700">
+                    <Link href={item.href} className="rounded-lg hover:text-accent">
                       {item.label}
                     </Link>
                     <ChevronRight aria-hidden className="size-4" />

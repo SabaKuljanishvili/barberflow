@@ -43,7 +43,7 @@ export default async function ServicesPage() {
                       <p className="font-semibold">{s.name}</p>
                       <p className="text-sm text-muted">{fmt(p.minutes, { n: s.duration_minutes })}</p>
                     </div>
-                    <p className="text-lg font-bold text-brand-900 tabular-nums">{money(s.price)}</p>
+                    <p className="text-lg font-bold text-accent tabular-nums">{money(s.price)}</p>
                   </div>
                   <ActionForm action={deleteService} resetOnSuccess={false} className="mt-3 space-y-2" aria-label={fmt(p.removeLabel, { name: s.name })}>
                     <input type="hidden" name="id" value={s.id} />

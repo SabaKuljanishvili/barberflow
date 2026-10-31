@@ -62,7 +62,7 @@ export default async function OverviewPage({ searchParams }: { searchParams: Pro
   return (
     <div className="space-y-6">
       {error === "forbidden" && (
-        <p role="alert" className="rounded-2xl bg-red-50 px-4 py-3 text-sm text-danger">
+        <p role="alert" className="rounded-2xl bg-danger-soft px-4 py-3 text-sm text-danger">
           {o.forbidden}
         </p>
       )}
@@ -97,7 +97,7 @@ export default async function OverviewPage({ searchParams }: { searchParams: Pro
             <h2 id="today" className="text-lg font-semibold">
               {o.schedule}
             </h2>
-            <Link href="/dashboard/appointments" className="text-sm font-medium text-brand-700 hover:text-brand-900">
+            <Link href="/dashboard/appointments" className="text-sm font-medium text-accent hover:text-accent">
               {o.allAppointments}
             </Link>
           </div>
@@ -142,7 +142,7 @@ export default async function OverviewPage({ searchParams }: { searchParams: Pro
                     aria-label={fmt(o.barberBookings, { name: b.name, count: b.count })}
                     title={fmt(o.barberBookings, { name: b.name, count: b.count })}
                   >
-                    <div className="h-2 rounded-full bg-brand-700" style={{ width: `${(b.count / maxCount) * 100}%` }} />
+                    <div className="h-2 rounded-full bg-brand" style={{ width: `${(b.count / maxCount) * 100}%` }} />
                   </div>
                 </li>
               ))}
@@ -170,17 +170,17 @@ function Stat({
   highlight?: boolean;
 }) {
   return (
-    <div className={highlight ? "rounded-3xl bg-brand-900 p-6 text-white shadow-soft" : "card"}>
+    <div className={highlight ? "rounded-3xl bg-brand p-6 text-on-brand shadow-soft" : "card"}>
       <div className="flex items-center justify-between gap-3">
-        <p className={`text-sm font-medium ${highlight ? "text-brand-100" : "text-muted"}`}>{label}</p>
+        <p className={`text-sm font-medium ${highlight ? "text-on-brand/90" : "text-muted"}`}>{label}</p>
         <span
-          className={`inline-flex size-9 items-center justify-center rounded-2xl ${highlight ? "bg-white/10 text-brand-100" : "bg-brand-50 text-brand-700"}`}
+          className={`inline-flex size-9 items-center justify-center rounded-2xl ${highlight ? "bg-on-brand/10 text-on-brand/90" : "bg-brand-soft text-accent"}`}
         >
           <Icon aria-hidden className="size-[18px]" />
         </span>
       </div>
       <p className="mt-3 text-3xl font-bold tracking-tight tabular-nums">{value}</p>
-      <p className={`mt-1 text-sm ${highlight ? "text-brand-100" : "text-muted"}`}>{note}</p>
+      <p className={`mt-1 text-sm ${highlight ? "text-on-brand/90" : "text-muted"}`}>{note}</p>
     </div>
   );
 }

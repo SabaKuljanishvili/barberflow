@@ -8,6 +8,7 @@ import type { Tables } from "@/lib/supabase/database.types";
 import { findOpenSlots, formatInZone } from "@/lib/time";
 import { extractFirstName, matchChoice, requestedLanguage } from "./match";
 import { speak, speakableLocale } from "./tts";
+import { understand, type Understanding } from "./understand";
 import { VoiceResponse, twilioClient, webhookUrl, type TwilioParams } from "./twilio";
 
 // Inbound call state machine. Each step is a Twilio webhook; state travels in
@@ -17,6 +18,10 @@ import { VoiceResponse, twilioClient, webhookUrl, type TwilioParams } from "./tw
 // Language: `l` in the query is the call's language. The first step picks it
 // from the caller's saved choice, else the salon's default; pressing 0 at the
 // first menu switches it and saves it on the client.
+//
+// Speech the keyword matcher can't place goes to Claude (understand.ts),
+// which may pick the option or answer a question about the salon. Answers
+// don't use up an attempt; `q` counts them so a call can't loop forever.
 
 type Db = ReturnType<typeof createSupabaseAdminClient>;
 type Salon = Tables<"salons">;
@@ -25,6 +30,7 @@ type Ctx = { db: Db; salon: Salon; params: TwilioParams; query: Query; locale: L
 type Twiml = InstanceType<typeof VoiceResponse>;
 
 const MAX_ATTEMPTS = 2;
+const MAX_QUESTIONS = 3;
 
 /** How dates are read out: weekday, day, month and time; no year. */
 const SPOKEN_DATE: Intl.DateTimeFormatOptions = { weekday: "long", day: "numeric", month: "long", hour: "numeric", minute: "2-digit", dateStyle: undefined, timeStyle: undefined };
@@ -135,12 +141,11 @@ async function chooseService(ctx: Ctx): Promise<string> {
   if (switchTo && speakableLocale(switchTo) === switchTo) return switchLanguage(ctx, switchTo);
 
   const services = await listServices(ctx);
-  const index = matchChoice(input(ctx), services.map((s) => s.name));
-  if (index === null) {
-    return retry(ctx, "/api/voice/service", ctx.t.whichService, services.map((s) => describeService(ctx, s)));
-  }
+  const options = services.map((s) => describeService(ctx, s));
+  const choice = await resolveChoice(ctx, ctx.t.whichService, options, services.map((s) => s.name));
+  if (choice.kind !== "choice") return retry(ctx, "/api/voice/service", ctx.t.whichService, options, choice);
 
-  const service = services[index];
+  const service = services[choice.index];
   const barbers = await listBarbers(ctx);
   const r = new VoiceResponse();
   gatherMenu(
@@ -170,10 +175,11 @@ async function chooseBarber(ctx: Ctx): Promise<string> {
 
   const barbers = await listBarbers(ctx);
   const options = [...barbers.map((b) => b.full_name), ctx.t.anyBarber];
-  const index = matchChoice(input(ctx), options);
-  if (index === null || Number(ctx.query.get("a") ?? "0") > MAX_ATTEMPTS) {
-    return retry(ctx, "/api/voice/barber", ctx.t.preferredBarber, options);
+  const choice = await resolveChoice(ctx, ctx.t.preferredBarber, options);
+  if (choice.kind !== "choice" || Number(ctx.query.get("a") ?? "0") > MAX_ATTEMPTS) {
+    return retry(ctx, "/api/voice/barber", ctx.t.preferredBarber, options, choice);
   }
+  const index = choice.index;
 
   const chosen = index < barbers.length ? [barbers[index]] : barbers;
   const offers = await nextSlots(ctx, service, chosen, 3);
@@ -197,6 +203,7 @@ async function chooseBarber(ctx: Ctx): Promise<string> {
       s: service.id,
       bd: index + 1,
       a: ctx.query.get("a") ?? undefined,
+      q: ctx.query.get("q") ?? undefined,
       o: offers.map((o) => `${o.staffId}_${o.start.getTime() / 60_000}`).join(","),
     }),
   );
@@ -215,16 +222,25 @@ async function chooseSlot(ctx: Ctx): Promise<string> {
     .filter(([id, mins]) => /^[0-9a-f-]{36}$/.test(id) && /^\d+$/.test(mins))
     .map(([staffId, mins]) => ({ staffId, start: new Date(Number(mins) * 60_000) }));
 
-  const index = matchChoice(input(ctx), offers.map((_, i) => `option ${i + 1}`));
-  if (index === null || !offers[index]) {
+  const barbers = await listBarbers(ctx);
+  const names = new Map(barbers.map((b) => [b.id, b.full_name]));
+  const labels = offers.map((o) => fmt(ctx.t.slotOption, { when: spokenDate(ctx, o.start), barber: names.get(o.staffId) ?? "" }));
+  const choice = await resolveChoice(ctx, ctx.t.nextSlots, labels, offers.map((_, i) => `option ${i + 1}`));
+  if (choice.kind !== "choice" || !offers[choice.index]) {
     const r = new VoiceResponse();
-    say(ctx, r, ctx.t.notUnderstood);
-    reofferSlots(r, ctx, Number(ctx.query.get("a") ?? "0") + 1);
+    const attempt = Number(ctx.query.get("a") ?? "0");
+    if (choice.kind === "question") {
+      say(ctx, r, choice.answer);
+      reofferSlots(r, ctx, attempt, questions(ctx) + 1);
+    } else {
+      say(ctx, r, ctx.t.notUnderstood);
+      reofferSlots(r, ctx, attempt + 1);
+    }
     return r.toString();
   }
 
-  const offer = offers[index];
-  const barber = (await listBarbers(ctx)).find((b) => b.id === offer.staffId);
+  const offer = offers[choice.index];
+  const barber = barbers.find((b) => b.id === offer.staffId);
   if (!barber) return restart(ctx);
 
   const { data: appointment, error } = await db
@@ -342,8 +358,10 @@ function gatherMenu(ctx: Ctx, r: Twiml, prompt: string, options: string[], actio
   r.redirect({ method: "POST" }, action);
 }
 
-async function retry(ctx: Ctx, path: string, prompt: string, options: string[]): Promise<string> {
-  const attempt = Number(ctx.query.get("a") ?? "0") + 1;
+/** Asks again. After an answered question, the answer leads and no attempt is used. */
+async function retry(ctx: Ctx, path: string, prompt: string, options: string[], heard?: Understanding): Promise<string> {
+  const answered = heard?.kind === "question" ? heard.answer : null;
+  const attempt = Number(ctx.query.get("a") ?? "0") + (answered ? 0 : 1);
   const r = new VoiceResponse();
   if (attempt > MAX_ATTEMPTS) {
     await logOutcome(ctx, "abandoned");
@@ -353,8 +371,9 @@ async function retry(ctx: Ctx, path: string, prompt: string, options: string[]):
   }
   const query: Record<string, string> = Object.fromEntries(ctx.query);
   query.a = String(attempt);
+  if (answered) query.q = String(questions(ctx) + 1);
   delete query.d;
-  gatherMenu(ctx, r, `${ctx.t.notUnderstood} ${prompt}`, options, url(ctx, path, query));
+  gatherMenu(ctx, r, `${answered ?? ctx.t.notUnderstood} ${prompt}`, options, url(ctx, path, query));
   return r.toString();
 }
 
@@ -365,11 +384,32 @@ function restart(ctx: Ctx): string {
   return r.toString();
 }
 
-function reofferSlots(r: Twiml, ctx: Ctx, attempt: number) {
+function reofferSlots(r: Twiml, ctx: Ctx, attempt: number, asked = questions(ctx)) {
   r.redirect(
     { method: "POST" },
-    url(ctx, "/api/voice/barber", { c: clientId(ctx), s: ctx.query.get("s") ?? "", d: ctx.query.get("bd") ?? "", a: attempt }),
+    url(ctx, "/api/voice/barber", { c: clientId(ctx), s: ctx.query.get("s") ?? "", d: ctx.query.get("bd") ?? "", a: attempt, q: asked || undefined }),
   );
+}
+
+/**
+ * Keypad or keyword match first; Claude only for speech that didn't match.
+ * `matchLabels` are what the keyword matcher compares against, when they
+ * differ from the options as spoken.
+ */
+async function resolveChoice(ctx: Ctx, menuPrompt: string, options: string[], matchLabels = options): Promise<Understanding> {
+  const index = matchChoice(input(ctx), matchLabels);
+  if (index !== null) return { kind: "choice", index };
+  const speech = ctx.params.SpeechResult;
+  if (!speech) return { kind: "unclear" };
+
+  const [services, barbers] = await Promise.all([listServices(ctx), listBarbers(ctx)]);
+  const heard = await understand({ facts: { salon: ctx.salon, services, barbers }, locale: ctx.locale, menuPrompt, options, speech });
+  if (heard.kind === "question" && questions(ctx) >= MAX_QUESTIONS) return { kind: "unclear" };
+  return heard;
+}
+
+function questions(ctx: Ctx) {
+  return Number(ctx.query.get("q") ?? "0");
 }
 
 async function listServices({ db, salon }: Ctx) {

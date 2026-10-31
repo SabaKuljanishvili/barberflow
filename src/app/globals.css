@@ -1,42 +1,52 @@
 @import "tailwindcss";
+@import "./tokens.css";
+@import "./landing.css" layer(components);
 
-/* Light mode only. Contrast: ink/canvas 16.9:1, muted/canvas 4.6:1, muted/white 4.8:1, white/brand-700 5.5:1. */
-@theme {
-  --color-canvas: #f8fafc;
-  --color-surface: #ffffff;
-  --color-line: #e5e7eb;
-  --color-ink: #111827;
-  --color-muted: #6b7280;
-  --color-brand-50: #ecfdf5;
-  --color-brand-100: #d1fae5;
-  --color-brand-500: #10b981;
-  --color-brand-700: #047857;
-  --color-brand-900: #064e3b;
-  --color-danger: #b91c1c;
+/*
+ * Tailwind colours point at the theme tokens in tokens.css, so every
+ * utility (bg-surface, text-muted, border-line …) follows light/dark mode.
+ * Contrast (light / dark): ink/bg 14.3 / 16.0, muted/bg 5.3 / 7.7,
+ * on-brand/brand 7.4 / 5.2, accent/bg 7.1 / 10.3, warn/warn-soft 4.5 / 6.3.
+ */
+@theme inline {
+  --color-canvas: var(--bg);
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-line: var(--line);
+  --color-line2: var(--line2);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-brand: var(--green);
+  --color-brand-hi: var(--green-hi);
+  --color-brand-soft: var(--green-soft);
+  --color-accent: var(--green-ink);
+  --color-on-brand: var(--on-green);
+  --color-busy: var(--busy);
+  --color-warn: var(--warn);
+  --color-warn-soft: var(--warn-soft);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
 
-  --font-sans: var(--font-inter), var(--font-georgian), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-manrope), var(--font-georgian), ui-sans-serif, system-ui, sans-serif;
+  --font-serif: var(--font-noto-serif), var(--font-serif-georgian), Georgia, serif;
 
-  --shadow-soft: 0 1px 2px rgb(17 24 39 / 0.04), 0 4px 16px rgb(17 24 39 / 0.05);
-}
-
-:root {
-  color-scheme: light;
+  --shadow-soft: var(--shadow-sm);
 }
 
 html {
-  background: var(--color-canvas);
+  background: var(--bg);
 }
 
 body {
-  background: var(--color-canvas);
-  color: var(--color-ink);
+  background: var(--bg);
+  color: var(--ink);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
 }
 
 /* One visible, consistent focus ring for keyboard users. */
 :focus-visible {
-  outline: 3px solid var(--color-brand-500);
+  outline: 2px solid var(--green-ink);
   outline-offset: 2px;
   border-radius: 12px;
 }
@@ -55,19 +65,19 @@ body {
   @apply rounded-3xl border border-line bg-surface p-6 shadow-soft;
 }
 @utility btn {
-  @apply inline-flex items-center justify-center gap-2 rounded-2xl px-4 py-2.5 text-sm font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-60;
+  @apply inline-flex items-center justify-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-60;
 }
 @utility btn-primary {
-  @apply btn bg-brand-700 text-white hover:bg-brand-900;
+  @apply btn bg-brand text-on-brand hover:bg-brand-hi;
 }
 @utility btn-secondary {
-  @apply btn border border-line bg-surface text-ink hover:bg-canvas;
+  @apply btn border border-line bg-transparent text-ink hover:border-ink;
 }
 @utility btn-danger {
-  @apply btn border border-line bg-surface text-danger hover:bg-red-50;
+  @apply btn border border-line bg-transparent text-danger hover:bg-danger-soft;
 }
 @utility input {
-  @apply w-full rounded-2xl border border-line bg-surface px-4 py-2.5 text-sm text-ink placeholder:text-muted focus:border-brand-500;
+  @apply w-full rounded-2xl border border-line bg-surface px-4 py-2.5 text-sm text-ink placeholder:text-muted focus:border-accent;
 }
 @utility label {
   @apply mb-1.5 block text-sm font-medium text-ink;
@@ -78,7 +88,7 @@ body {
 
 @layer components {
   .prose-legal h2 {
-    @apply mt-10 mb-3 text-xl font-semibold text-ink;
+    @apply mt-10 mb-3 font-serif text-xl font-semibold text-ink;
   }
   .prose-legal p,
   .prose-legal li {
@@ -88,6 +98,6 @@ body {
     @apply list-disc pl-6;
   }
   .prose-legal a {
-    @apply font-medium text-brand-700 underline underline-offset-2;
+    @apply font-medium text-accent underline underline-offset-2;
   }
 }

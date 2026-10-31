@@ -1,0 +1,109 @@
+/*
+ * Site-wide design tokens. The theme lives in <html data-theme="light|dark">,
+ * set before first paint by components/theme/theme-script.tsx.
+ * Light is warm paper (never pure white); dark is neutral charcoal (never green).
+ */
+:root {
+  color-scheme: light;
+  --bg: #f2eee5;
+  --surface: #faf8f3;
+  --line: #d9d2c3;
+  --line2: #e6e0d4;
+  --ink: #15211c;
+  --muted: #58645e;
+  --green: #0b5a43;
+  --green-hi: #0e6b50;
+  --green-ink: #0b5a43;
+  --green-soft: #dee9e1;
+  --on-green: #f6f3ec;
+  --busy: #e7e1d4;
+  --warn: #a9531c;
+  --warn-soft: color-mix(in srgb, var(--warn) 8%, var(--surface));
+  --danger: #a8321f;
+  --danger-soft: color-mix(in srgb, var(--danger) 8%, var(--surface));
+  --blob: rgba(14, 107, 80, 0.2);
+  --blob2: rgba(196, 160, 104, 0.26);
+  --grain: 0.16;
+  --grain-blend: multiply;
+  --shadow: 0 30px 60px -40px rgba(21, 33, 28, 0.45);
+  --shadow-sm: 0 1px 2px rgba(21, 33, 28, 0.04), 0 8px 24px -12px rgba(21, 33, 28, 0.12);
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #121313;
+  --surface: #1a1b1b;
+  --line: #2b2d2c;
+  --line2: #232524;
+  --ink: #edeeec;
+  --muted: #a4a8a6;
+  --green: #187553;
+  --green-hi: #1d8862;
+  --green-ink: #63d5a5;
+  --green-soft: #16271f;
+  --on-green: #f3f7f4;
+  --busy: #252727;
+  --warn: #e8915c;
+  --danger: #f0897a;
+  --blob: rgba(24, 117, 83, 0.3);
+  --blob2: rgba(99, 213, 165, 0.1);
+  --grain: 0.22;
+  --grain-blend: overlay;
+  --shadow: 0 30px 70px -40px rgba(0, 0, 0, 0.9);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px -12px rgba(0, 0, 0, 0.6);
+}
+
+/* Colour cross-fade while the theme switches (class added for 450 ms). */
+html.theme-anim,
+html.theme-anim *,
+html.theme-anim *::before,
+html.theme-anim *::after {
+  transition:
+    background-color 0.4s ease,
+    border-color 0.4s ease,
+    color 0.4s ease,
+    box-shadow 0.4s ease !important;
+}
+
+.themebtn {
+  position: relative;
+  flex: none;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--ink);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  overflow: hidden;
+  transition: border-color 0.25s;
+}
+.themebtn:hover {
+  border-color: var(--ink);
+}
+.themebtn:focus-visible {
+  outline: 2px solid var(--green-ink);
+  outline-offset: 2px;
+  border-radius: 50%;
+}
+.themebtn svg {
+  position: absolute;
+  transition:
+    transform 0.55s cubic-bezier(0.2, 0.7, 0.2, 1),
+    opacity 0.3s;
+}
+.themebtn .i-sun {
+  transform: rotate(-90deg) scale(0.4);
+  opacity: 0;
+}
+:root[data-theme="dark"] .themebtn .i-sun {
+  transform: none;
+  opacity: 1;
+}
+:root[data-theme="dark"] .themebtn .i-moon {
+  transform: rotate(90deg) scale(0.4);
+  opacity: 0;
+}

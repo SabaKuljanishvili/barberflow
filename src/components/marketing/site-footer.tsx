@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { LogoMark } from "@/components/logo";
+import { ScissorsIcon } from "@/components/logo";
 import { getI18n } from "@/i18n/server";
 import { legalPages, marketingNav, site } from "@/lib/site";
 import { businessDetails } from "@/lib/env.server";
@@ -9,45 +9,37 @@ export async function SiteFooter() {
   const biz = businessDetails();
   const year = new Date().getFullYear();
   return (
-    <footer className="mt-24 border-t border-line bg-surface">
-      <div className="mx-auto grid max-w-6xl gap-10 px-4 py-12 sm:grid-cols-3 sm:px-6">
+    <footer className="wrap bf-cb">
+      <div className="fgrid">
         <div>
-          <div className="flex items-center gap-2.5">
-            <LogoMark className="size-8" />
-            <span className="font-bold">{site.name}</span>
+          <div className="row fbrand">
+            <span className="brand-mark">
+              <ScissorsIcon size={15} />
+            </span>
+            <span className="brand-name">{site.name}</span>
           </div>
-          <p className="mt-3 max-w-xs text-sm text-muted">{t.meta.description}</p>
+          <p className="p fdesc">{t.footer.tagline}</p>
         </div>
         <nav aria-label={t.footer.label}>
-          <h2 className="text-sm font-semibold text-ink">{t.footer.company}</h2>
-          <ul className="mt-3 space-y-2 text-sm">
-            {marketingNav.map((item) => (
-              <li key={item.href}>
-                <Link href={item.href} className="text-muted hover:text-brand-700">
-                  {t.nav[item.key]}
-                </Link>
-              </li>
-            ))}
-          </ul>
+          <h2 className="fh">{t.footer.company}</h2>
+          {marketingNav.map((item) => (
+            <Link key={item.href} className="fl" href={item.href}>
+              {t.nav[item.key]}
+            </Link>
+          ))}
         </nav>
         <nav aria-label={t.footer.legal}>
-          <h2 className="text-sm font-semibold text-ink">{t.footer.legal}</h2>
-          <ul className="mt-3 space-y-2 text-sm">
-            {legalPages.map((item) => (
-              <li key={item.href}>
-                <Link href={item.href} className="text-muted hover:text-brand-700">
-                  {t.legal.pages[item.key].title}
-                </Link>
-              </li>
-            ))}
-          </ul>
+          <h2 className="fh">{t.footer.legal}</h2>
+          {legalPages.map((item) => (
+            <Link key={item.href} className="fl" href={item.href}>
+              {t.legal.pages[item.key].title}
+            </Link>
+          ))}
         </nav>
       </div>
-      <div className="border-t border-line">
-        <p className="mx-auto max-w-6xl px-4 py-6 text-xs text-muted sm:px-6">
-          © {year} {biz.legalName ?? site.name}. {t.footer.rights}
-        </p>
-      </div>
+      <p className="fcopy">
+        © {year} {biz.legalName ?? site.name}. {t.footer.rights}
+      </p>
     </footer>
   );
 }

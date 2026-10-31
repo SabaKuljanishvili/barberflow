@@ -15,12 +15,12 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
       <h1 className="text-2xl font-bold tracking-tight">{t.auth.login.title}</h1>
       <p className="mt-1 text-sm text-muted">{t.auth.login.intro}</p>
       {confirmed && (
-        <p role="status" className="mt-4 rounded-2xl bg-brand-50 px-4 py-3 text-sm text-brand-900">
+        <p role="status" className="mt-4 rounded-2xl bg-brand-soft px-4 py-3 text-sm text-accent">
           {t.auth.login.confirmed}
         </p>
       )}
       {error === "link" && (
-        <p role="alert" className="mt-4 rounded-2xl bg-red-50 px-4 py-3 text-sm text-danger">
+        <p role="alert" className="mt-4 rounded-2xl bg-danger-soft px-4 py-3 text-sm text-danger">
           {t.auth.login.badLink}
         </p>
       )}

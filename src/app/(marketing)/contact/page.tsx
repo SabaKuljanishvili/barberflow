@@ -39,11 +39,11 @@ export default async function ContactPage() {
             )}
             {b.email && (
               <div className="flex gap-3">
-                <Mail aria-hidden className="mt-0.5 size-5 text-brand-700" />
+                <Mail aria-hidden className="mt-0.5 size-5 text-accent" />
                 <div>
                   <dt className="text-sm text-muted">{t.contact.email}</dt>
                   <dd>
-                    <a href={`mailto:${b.email}`} className="font-medium text-brand-700 underline underline-offset-2">
+                    <a href={`mailto:${b.email}`} className="font-medium text-accent underline underline-offset-2">
                       {b.email}
                     </a>
                   </dd>
@@ -52,11 +52,11 @@ export default async function ContactPage() {
             )}
             {b.phone && (
               <div className="flex gap-3">
-                <Phone aria-hidden className="mt-0.5 size-5 text-brand-700" />
+                <Phone aria-hidden className="mt-0.5 size-5 text-accent" />
                 <div>
                   <dt className="text-sm text-muted">{t.contact.phone}</dt>
                   <dd>
-                    <a href={`tel:${b.phone}`} className="font-medium text-brand-700 underline underline-offset-2">
+                    <a href={`tel:${b.phone}`} className="font-medium text-accent underline underline-offset-2">
                       {b.phone}
                     </a>
                   </dd>
@@ -65,7 +65,7 @@ export default async function ContactPage() {
             )}
             {address && (
               <div className="flex gap-3 sm:col-span-2">
-                <MapPin aria-hidden className="mt-0.5 size-5 text-brand-700" />
+                <MapPin aria-hidden className="mt-0.5 size-5 text-accent" />
                 <div>
                   <dt className="text-sm text-muted">{t.contact.address}</dt>
                   <dd className="font-medium">{address}</dd>

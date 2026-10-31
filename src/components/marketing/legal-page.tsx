@@ -38,7 +38,7 @@ export async function LegalPage({ page, intro, children }: { page: LegalKey; int
                 <Link
                   href={p.href}
                   aria-current={p.href === href ? "page" : undefined}
-                  className={`block rounded-2xl px-3 py-2 ${p.href === href ? "bg-brand-50 font-medium text-brand-900" : "text-muted hover:bg-canvas hover:text-ink"}`}
+                  className={`block rounded-2xl px-3 py-2 ${p.href === href ? "bg-brand-soft font-medium text-accent" : "text-muted hover:bg-canvas hover:text-ink"}`}
                 >
                   {t.legal.pages[p.key].title}
                 </Link>

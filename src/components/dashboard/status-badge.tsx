@@ -4,10 +4,10 @@ import type { AppointmentStatus } from "@/lib/supabase/database.types";
 
 // Icon + text label: status never relies on colour alone.
 const styles: Record<AppointmentStatus, { className: string; icon: typeof CheckCircle2 }> = {
-  pending: { className: "bg-amber-50 text-amber-800", icon: CircleDashed },
-  confirmed: { className: "bg-brand-50 text-brand-900", icon: CheckCircle2 },
-  completed: { className: "bg-slate-100 text-slate-700", icon: Flag },
-  cancelled: { className: "bg-red-50 text-red-800", icon: CircleSlash },
+  pending: { className: "bg-warn-soft text-warn", icon: CircleDashed },
+  confirmed: { className: "bg-brand-soft text-accent", icon: CheckCircle2 },
+  completed: { className: "bg-busy text-muted", icon: Flag },
+  cancelled: { className: "bg-danger-soft text-danger", icon: CircleSlash },
 };
 
 export async function StatusBadge({ status }: { status: AppointmentStatus }) {

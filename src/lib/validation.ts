@@ -120,7 +120,12 @@ export const clientSchema = z.object({
 });
 
 export const appointmentSchema = z.object({
-  staffId: z.uuid(),
+  // Empty means "any available barber"; the server picks one.
+  staffId: z
+    .string()
+    .optional()
+    .transform((v) => v || undefined)
+    .pipe(z.uuid().optional()),
   serviceId: z.uuid(),
   // "YYYY-MM-DDTHH:MM" in the salon's timezone, from withDateTime().
   localTime: z.string().regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/, m("dateTime")),

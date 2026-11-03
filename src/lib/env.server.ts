@@ -16,6 +16,7 @@ const serverSchema = z.object({
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(20),
   CRON_SECRET: z.string().min(32, "use at least 32 random characters"),
   BUSINESS_LEGAL_NAME: optional,
+  BUSINESS_ID_CODE: optional,
   BUSINESS_EMAIL: optional,
   BUSINESS_PHONE: optional,
   BUSINESS_STREET: optional,
@@ -48,6 +49,7 @@ export function businessDetails() {
   };
   return {
     legalName: pick("BUSINESS_LEGAL_NAME"),
+    idCode: pick("BUSINESS_ID_CODE"),
     email: pick("BUSINESS_EMAIL"),
     phone: pick("BUSINESS_PHONE"),
     street: pick("BUSINESS_STREET"),

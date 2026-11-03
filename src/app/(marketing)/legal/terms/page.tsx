@@ -1,14 +1,14 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import Link from "@/components/locale-link";
 import { LegalPage } from "@/components/marketing/legal-page";
-import { getI18n } from "@/i18n/server";
+import { getI18n, pageAlternates } from "@/i18n/server";
 import { businessDetails } from "@/lib/env.server";
 import { site } from "@/lib/site";
 
 export async function generateMetadata(): Promise<Metadata> {
   const { t } = await getI18n();
   const page = t.legal.pages.terms;
-  return { title: page.title, description: page.description, alternates: { canonical: "/legal/terms" } };
+  return { title: page.title, description: page.description, alternates: await pageAlternates("/legal/terms") };
 }
 
 export default async function TermsPage() {

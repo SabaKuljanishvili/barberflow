@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { Dictionary } from "@/i18n/dictionaries/en";
-import { SMOOTH_SCROLL_EVENT, STICKY_ATTR } from "@/components/smooth-scroll-shared";
 import { SCENES } from "./scenes";
 
 type Home = Dictionary["home"];
@@ -88,13 +87,10 @@ export function Features({ home }: { home: Home }) {
     // Web fonts change the heading's height.
     document.fonts?.ready.then(onResize);
     window.addEventListener("scroll", onScroll, { passive: true });
-    // ScrollSmoother keeps gliding after native scroll events stop.
-    window.addEventListener(SMOOTH_SCROLL_EVENT, onScroll);
     window.addEventListener("resize", onResize, { passive: true });
     return () => {
       cancelAnimationFrame(raf);
       window.removeEventListener("scroll", onScroll);
-      window.removeEventListener(SMOOTH_SCROLL_EVENT, onScroll);
       window.removeEventListener("resize", onResize);
     };
   }, []);
@@ -105,7 +101,7 @@ export function Features({ home }: { home: Home }) {
   return (
     <section id="features" className="wrap bf-cb sec">
       <div ref={splitRef} className="split">
-        <div ref={stickRef} className="stick" {...{ [STICKY_ATTR]: "" }}>
+        <div ref={stickRef} className="stick">
           <div ref={headRef} className="stick-head">
             <span className="eyebrow">{home.featuresEyebrow}</span>
             <h2 className="serif h2">{home.featuresTitle}</h2>

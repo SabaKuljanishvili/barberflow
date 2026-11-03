@@ -51,7 +51,6 @@ export async function generateMetadata(): Promise<Metadata> {
       siteName: site.name,
       locale: OG_LOCALE[locale],
       alternateLocale: Object.values(OG_LOCALE).filter((l) => l !== OG_LOCALE[locale]),
-      url: "/",
       title,
       description: t.meta.description,
     },

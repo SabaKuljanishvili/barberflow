@@ -1,5 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
+import { DEFAULT_LOCALE, LOCALE_COOKIE } from "@/i18n/config";
+import { LOCALE_HEADER, isMarketingPath, localizedPath, splitLocalePath } from "@/i18n/routing";
 import { RATE_LIMIT_RULES, rateLimit } from "@/lib/rate-limit";
 
 const isDev = process.env.NODE_ENV !== "production";
@@ -46,11 +48,34 @@ export async function proxy(request: NextRequest) {
   // Webhooks and cron authenticate themselves (Twilio signature / bearer secret).
   if (pathname.startsWith("/api")) return NextResponse.next();
 
+  // Marketing pages carry their language in the URL: "/" is Georgian,
+  // "/en/..." English (rewritten onto the same pages). "/ka/..." and
+  // prefixed non-marketing paths redirect to their one canonical URL.
+  const prefixed = splitLocalePath(pathname);
+  if (prefixed && (prefixed.locale === DEFAULT_LOCALE || !isMarketingPath(prefixed.path))) {
+    const target = new URL(localizedPath(prefixed.locale, prefixed.path) + request.nextUrl.search, request.url);
+    return NextResponse.redirect(target, 308);
+  }
+  const pagePath = prefixed?.path ?? pathname;
+  const urlLocale = isMarketingPath(pagePath) ? (prefixed?.locale ?? DEFAULT_LOCALE) : null;
+  // Someone who chose English earlier gets the English URL (crawlers have no cookie).
+  if (urlLocale === DEFAULT_LOCALE && request.method === "GET" && request.cookies.get(LOCALE_COOKIE)?.value === "en") {
+    return NextResponse.redirect(new URL(localizedPath("en", pathname) + request.nextUrl.search, request.url), 307);
+  }
+
   const nonce = Buffer.from(crypto.randomUUID()).toString("base64");
   const csp = buildCsp(nonce);
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set("x-nonce", nonce);
   requestHeaders.set("Content-Security-Policy", csp);
+  requestHeaders.delete(LOCALE_HEADER);
+  if (urlLocale) requestHeaders.set(LOCALE_HEADER, urlLocale);
+
+  if (prefixed) {
+    const rewritten = NextResponse.rewrite(new URL(pagePath + request.nextUrl.search, request.url), { request: { headers: requestHeaders } });
+    rewritten.headers.set("Content-Security-Policy", csp);
+    return rewritten;
+  }
 
   let response = NextResponse.next({ request: { headers: requestHeaders } });
 

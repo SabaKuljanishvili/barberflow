@@ -19,7 +19,13 @@ export function LocaleSwitcher({ className = "" }: { className?: string }) {
       action={setLocale}
       className={`relative inline-grid shrink-0 grid-cols-2 rounded-full border border-line p-[3px] ${className}`}
       aria-label={t.switcher.label}
+      onSubmit={(e) => {
+        // Marketing pages switch URL (/ and /en); the action needs the current one.
+        const input = e.currentTarget.elements.namedItem("path");
+        if (input instanceof HTMLInputElement) input.value = location.pathname + location.hash;
+      }}
     >
+      <input type="hidden" name="path" defaultValue="" />
       <span
         aria-hidden
         className="absolute inset-y-[3px] left-[3px] w-[calc(50%-3px)] rounded-full bg-ink transition-transform duration-300 ease-out"

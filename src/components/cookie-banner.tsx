@@ -1,14 +1,15 @@
 "use client";
 
-import Link from "next/link";
+import Link from "@/components/locale-link";
 import { useEffect, useState } from "react";
+import { X } from "lucide-react";
 import { useI18n } from "@/i18n/client";
 
 const COOKIE = "bf_cookie_consent";
 
-// DevskStudio sets only strictly necessary cookies (sign-in session, this
-// choice). The banner records acknowledgement; no optional trackers load
-// regardless of the answer.
+// DevskStudio sets only strictly necessary cookies (sign-in session,
+// language, this notice), so no consent is needed: this is a small,
+// dismissible notice, not a consent banner. Nothing optional ever loads.
 export function CookieBanner() {
   const { t } = useI18n();
   const [open, setOpen] = useState(false);
@@ -19,9 +20,9 @@ export function CookieBanner() {
     setOpen(!document.cookie.split("; ").some((c) => c.startsWith(`${COOKIE}=`)));
   }, []);
 
-  function choose(value: "accepted" | "essential") {
+  function dismiss() {
     const secure = location.protocol === "https:" ? "; Secure" : "";
-    document.cookie = `${COOKIE}=${value}; Max-Age=${60 * 60 * 24 * 180}; Path=/; SameSite=Lax${secure}`;
+    document.cookie = `${COOKIE}=seen; Max-Age=${60 * 60 * 24 * 365}; Path=/; SameSite=Lax${secure}`;
     setOpen(false);
   }
 
@@ -31,24 +32,18 @@ export function CookieBanner() {
     <section
       role="region"
       aria-label={t.cookies.region}
-      className="fixed inset-x-4 bottom-4 z-50 mx-auto max-w-2xl rounded-3xl border border-line bg-surface p-5 shadow-soft"
+      className="fixed bottom-3 left-3 z-50 flex max-w-[calc(100vw-1.5rem)] items-center gap-3 rounded-2xl border border-line bg-surface py-2 pr-2 pl-4 text-sm text-muted shadow-soft sm:max-w-md"
     >
-      <h2 className="text-base font-semibold text-ink">{t.cookies.title}</h2>
-      <p className="mt-1 text-sm text-muted">
+      <p>
         {t.cookies.body}{" "}
         <Link href="/legal/cookies" className="font-medium text-accent underline underline-offset-2">
           {t.cookies.policy}
         </Link>
-        .
       </p>
-      <div className="mt-4 flex flex-wrap gap-2">
-        <button type="button" className="btn-primary" onClick={() => choose("accepted")}>
-          {t.cookies.accept}
-        </button>
-        <button type="button" className="btn-secondary" onClick={() => choose("essential")}>
-          {t.cookies.essential}
-        </button>
-      </div>
+      <button type="button" onClick={dismiss} className="btn-secondary shrink-0 px-3 py-1.5" aria-label={t.cookies.dismiss}>
+        <X aria-hidden="true" className="size-4 sm:hidden" />
+        <span className="hidden sm:inline">{t.cookies.dismiss}</span>
+      </button>
     </section>
   );
 }

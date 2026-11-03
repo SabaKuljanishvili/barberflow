@@ -4,11 +4,12 @@ import { Breadcrumbs } from "@/components/breadcrumbs";
 import { JsonLd } from "@/components/json-ld";
 import { businessDetails } from "@/lib/env.server";
 import { localBusinessSchema } from "@/lib/structured-data";
-import { getI18n } from "@/i18n/server";
+import { getI18n, pageAlternates } from "@/i18n/server";
+import { ContactForm } from "./contact-form";
 
 export async function generateMetadata(): Promise<Metadata> {
   const { t } = await getI18n();
-  return { title: t.contact.title, description: t.contact.description, alternates: { canonical: "/contact" } };
+  return { title: t.contact.title, description: t.contact.description, alternates: await pageAlternates("/contact") };
 }
 
 export default async function ContactPage() {
@@ -16,7 +17,7 @@ export default async function ContactPage() {
   const b = businessDetails();
   const schema = localBusinessSchema();
   const address = [b.street, b.city, b.region, b.postalCode, b.country].filter(Boolean).join(", ");
-  const hasAny = b.email || b.phone || address;
+  const hasAny = b.legalName || b.idCode || b.email || b.phone || address;
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-12 sm:px-6">
@@ -25,16 +26,30 @@ export default async function ContactPage() {
       <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">{t.contact.heading}</h1>
       <p className="mt-3 text-muted">{t.contact.intro}</p>
 
-      <section aria-labelledby="business" className="card mt-8">
+      <section aria-labelledby="write" className="card relative mt-8">
+        <h2 id="write" className="text-lg font-semibold">
+          {t.contact.formTitle}
+        </h2>
+        <p className="mt-1 text-sm text-muted">{t.contact.formIntro}</p>
+        <ContactForm />
+      </section>
+
+      <section aria-labelledby="business" className="card mt-6">
         <h2 id="business" className="text-lg font-semibold">
           {t.contact.business}
         </h2>
         {hasAny ? (
           <dl className="mt-4 grid gap-4 sm:grid-cols-2">
             {b.legalName && (
-              <div className="sm:col-span-2">
+              <div>
                 <dt className="text-sm text-muted">{t.contact.legalName}</dt>
                 <dd className="font-medium">{b.legalName}</dd>
+              </div>
+            )}
+            {b.idCode && (
+              <div>
+                <dt className="text-sm text-muted">{t.contact.idCode}</dt>
+                <dd className="font-medium tabular-nums">{b.idCode}</dd>
               </div>
             )}
             {b.email && (

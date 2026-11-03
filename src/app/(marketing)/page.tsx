@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import Link from "@/components/locale-link";
 import type { CSSProperties } from "react";
 import { JsonLd } from "@/components/json-ld";
 import { CallStream } from "@/components/marketing/call-stream";
@@ -9,14 +9,17 @@ import { HeroHeadline } from "@/components/marketing/hero-headline";
 import { splitHeadline } from "@/components/marketing/hero-headline-data";
 import { localBusinessSchema, organizationSchema, softwareSchema } from "@/lib/structured-data";
 import { site } from "@/lib/site";
-import { getI18n } from "@/i18n/server";
+import { AgentSample } from "@/components/marketing/agent-sample";
+import { Faq } from "@/components/marketing/faq";
+import { PricingPlans } from "@/components/marketing/pricing-plans";
+import { getI18n, pageAlternates } from "@/i18n/server";
 
 export async function generateMetadata(): Promise<Metadata> {
   const { t } = await getI18n();
   return {
     title: { absolute: `${site.name} | ${t.meta.tagline}` },
     description: t.meta.description,
-    alternates: { canonical: "/" },
+    alternates: await pageAlternates("/"),
   };
 }
 
@@ -88,6 +91,20 @@ export default async function HomePage() {
             </li>
           ))}
         </ol>
+      </section>
+
+      <AgentSample />
+
+      <section aria-labelledby="pricing" className="wrap bf-cb sec">
+        <div className="sec-head sr">
+          <span className="eyebrow">{t.pricing.eyebrow}</span>
+          <h2 id="pricing" className="serif h2">
+            {t.pricing.heading}
+          </h2>
+          <p className="p">{t.pricing.intro}</p>
+        </div>
+        <PricingPlans headingLevel={3} />
+        <Faq />
       </section>
 
       <section className="wrap bf-cb">

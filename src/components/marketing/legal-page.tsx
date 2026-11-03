@@ -1,6 +1,5 @@
-import Link from "next/link";
+import Link from "@/components/locale-link";
 import { Breadcrumbs } from "@/components/breadcrumbs";
-import { STICKY_ATTR } from "@/components/smooth-scroll-shared";
 import { INTL_LOCALE } from "@/i18n/config";
 import { getI18n } from "@/i18n/server";
 import { LEGAL_LAST_UPDATED, legalPages, type LegalKey } from "@/lib/site";
@@ -30,7 +29,7 @@ export async function LegalPage({ page, intro, children }: { page: LegalKey; int
         <p className="mt-6 leading-7 text-muted">{intro}</p>
         <div className="prose-legal">{children}</div>
       </article>
-      <aside aria-label={t.legal.otherPolicies} className="lg:sticky lg:top-6 lg:self-start" {...{ [STICKY_ATTR]: "" }}>
+      <aside aria-label={t.legal.otherPolicies} className="lg:sticky lg:top-6 lg:self-start">
         <nav className="card p-5">
           <h2 className="text-sm font-semibold">{t.legal.policies}</h2>
           <ul className="mt-3 space-y-1 text-sm">

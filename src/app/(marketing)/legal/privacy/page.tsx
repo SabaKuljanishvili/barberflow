@@ -1,26 +1,58 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import Link from "@/components/locale-link";
 import { LegalPage } from "@/components/marketing/legal-page";
-import { getI18n } from "@/i18n/server";
+import { getI18n, pageAlternates } from "@/i18n/server";
 import { businessDetails } from "@/lib/env.server";
 import { site } from "@/lib/site";
 
 export async function generateMetadata(): Promise<Metadata> {
   const { t } = await getI18n();
   const page = t.legal.pages.privacy;
-  return { title: page.title, description: page.description, alternates: { canonical: "/legal/privacy" } };
+  return { title: page.title, description: page.description, alternates: await pageAlternates("/legal/privacy") };
 }
 
 export default async function PrivacyPage() {
   const { locale } = await getI18n();
   const b = businessDetails();
   const company = b.legalName ?? site.name;
-  return locale === "ka" ? <Ka company={company} email={b.email} /> : <En company={company} email={b.email} />;
+  const address = [b.street, b.city, b.region, b.postalCode, b.country].filter(Boolean).join(", ");
+  const identity = <CompanyIdentity labels={locale === "ka" ? KA_ID : EN_ID} legalName={b.legalName} idCode={b.idCode} address={address} />;
+  return locale === "ka" ? <Ka company={company} email={b.email} identity={identity} /> : <En company={company} email={b.email} identity={identity} />;
 }
 
-type Props = { company: string; email?: string };
+type Props = { company: string; email?: string; identity: React.ReactNode };
 
-function En({ company, email }: Props) {
+const EN_ID = { legalName: "Legal name", idCode: "Company ID code", address: "Registered address" };
+const KA_ID = { legalName: "იურიდიული დასახელება", idCode: "საიდენტიფიკაციო კოდი (ს/კ)", address: "იურიდიული მისამართი" };
+
+/** Who the controller is (from BUSINESS_* env). Renders nothing until those are filled in. */
+function CompanyIdentity({ labels, legalName, idCode, address }: { labels: typeof EN_ID; legalName?: string; idCode?: string; address: string }) {
+  if (!legalName && !idCode && !address) return null;
+  return (
+    <dl>
+      {legalName && (
+        <>
+          <dt>{labels.legalName}</dt>
+          <dd>{legalName}</dd>
+        </>
+      )}
+      {idCode && (
+        <>
+          <dt>{labels.idCode}</dt>
+          <dd>{idCode}</dd>
+        </>
+      )}
+      {address && (
+        <>
+          <dt>{labels.address}</dt>
+          <dd>{address}</dd>
+        </>
+      )}
+    </dl>
+  );
+}
+
+function En({ company, email, identity }: Props) {
   return (
     <LegalPage
       page="privacy"
@@ -81,8 +113,8 @@ function En({ company, email }: Props) {
 
       <h2>6. Security</h2>
       <p>
-        Data is encrypted in transit. Each shop&apos;s data is isolated by row-level security in the database, staff
-        access is role-based, and sensitive endpoints are rate limited.
+        Data is encrypted in transit. Each shop&apos;s data is fully isolated from other shops at the database level,
+        staff access depends on their role, and repeated requests to sign-in and other sensitive pages are limited.
       </p>
 
       <h2>7. Your rights</h2>
@@ -104,11 +136,12 @@ function En({ company, email }: Props) {
           </>
         )}
       </p>
+      {identity}
     </LegalPage>
   );
 }
 
-function Ka({ company, email }: Props) {
+function Ka({ company, email, identity }: Props) {
   return (
     <LegalPage
       page="privacy"
@@ -124,7 +157,7 @@ function Ka({ company, email }: Props) {
       <ul>
         <li>
           <strong>თანამშრომლების ანგარიშები:</strong> სახელი, ელფოსტა, არასავალდებულო ტელეფონის ნომერი, როლი და პაროლი,
-          რომელსაც ავთენტიფიკაციის პროვაიდერი ინახავს მხოლოდ დაშიფრული (salted hash) სახით.
+          რომელსაც ავთენტიფიკაციის პროვაიდერი ინახავს მხოლოდ ჰეშირებული (salted hash) სახით — თავად პაროლს ვერავინ ხედავს.
         </li>
         <li>
           <strong>სალონის მონაცემები:</strong> სალონის დასახელება, სამუშაო საათები, დროის სარტყელი, ენა და სალონის
@@ -172,9 +205,9 @@ function Ka({ company, email }: Props) {
 
       <h2>6. უსაფრთხოება</h2>
       <p>
-        მონაცემები გადაცემისას დაშიფრულია. თითოეული სალონის მონაცემები იზოლირებულია მონაცემთა ბაზის row-level
-        security-ით, თანამშრომლების წვდომა როლებზეა დამოკიდებული, ხოლო მგრძნობიარე endpoint-ებზე მოთხოვნები
-        შეზღუდულია.
+        მონაცემები გადაცემისას დაშიფრულია. თითოეული სალონის მონაცემები მონაცემთა ბაზის დონეზე სრულად იზოლირებულია
+        სხვა სალონებისგან, თანამშრომლების წვდომა მათ როლზეა დამოკიდებული, ხოლო შესვლისა და სხვა მგრძნობიარე
+        გვერდებზე განმეორებითი მოთხოვნები შეზღუდულია.
       </p>
 
       <h2>7. თქვენი უფლებები</h2>
@@ -196,6 +229,7 @@ function Ka({ company, email }: Props) {
           </>
         )}
       </p>
+      {identity}
     </LegalPage>
   );
 }

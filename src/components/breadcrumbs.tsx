@@ -1,13 +1,14 @@
-import Link from "next/link";
+import Link from "@/components/locale-link";
 import { ChevronRight } from "lucide-react";
 import { siteUrl } from "@/lib/env";
+import { localizedPath } from "@/i18n/routing";
 import { getI18n } from "@/i18n/server";
 import { JsonLd } from "./json-ld";
 
 export type Crumb = { href: string; label: string };
 
 export async function Breadcrumbs({ items, structured = true }: { items: Crumb[]; structured?: boolean }) {
-  const { t } = await getI18n();
+  const { locale, t } = await getI18n();
   return (
     <>
       <nav aria-label={t.nav.breadcrumb} className="mb-6">
@@ -42,7 +43,7 @@ export async function Breadcrumbs({ items, structured = true }: { items: Crumb[]
               "@type": "ListItem",
               position: i + 1,
               name: item.label,
-              item: `${siteUrl()}${item.href}`,
+              item: `${siteUrl()}${localizedPath(locale, item.href)}`,
             })),
           }}
         />

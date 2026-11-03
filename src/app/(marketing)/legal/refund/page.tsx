@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import Link from "@/components/locale-link";
 import { LegalPage } from "@/components/marketing/legal-page";
-import { getI18n } from "@/i18n/server";
+import { getI18n, pageAlternates } from "@/i18n/server";
 
 export async function generateMetadata(): Promise<Metadata> {
   const { t } = await getI18n();
   const page = t.legal.pages.refund;
-  return { title: page.title, description: page.description, alternates: { canonical: "/legal/refund" } };
+  return { title: page.title, description: page.description, alternates: await pageAlternates("/legal/refund") };
 }
 
 export default async function RefundPage() {

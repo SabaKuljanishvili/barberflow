@@ -22,6 +22,10 @@ export const en = {
     signIn: "Sign in",
     setUpShop: "Set up your shop",
     breadcrumb: "Breadcrumb",
+    pricing: "Pricing",
+    menu: "Menu",
+    openMenu: "Open menu",
+    closeMenu: "Close menu",
   },
 
   footer: {
@@ -80,7 +84,7 @@ export const en = {
       },
       {
         title: "Each shop's data stays protected",
-        body: "Row-level security ties every record to its shop — one shop can never see another's clients.",
+        body: "Every record belongs to its own shop and is fully isolated, so one shop can never see another's clients.",
         label: "Data isolation",
       },
       {
@@ -111,11 +115,12 @@ export const en = {
       salonA: "Shop A",
       salonB: "Shop B",
       blocked: "Shop B → Shop A: access denied",
+      isolated: "Isolated",
       archived: [
-        { title: "Haircut · Nika", date: "18 Sep" },
-        { title: "Beard · Luka", date: "24 Sep" },
-        { title: "Fade · Giorgi", date: "29 Oct" },
-        { title: "Haircut · Luka", date: "30 Oct" },
+        "Haircut · Nika",
+        "Beard · Luka",
+        "Fade · Giorgi",
+        "Haircut · Luka",
       ],
       archive: "Archive · every night",
     },
@@ -144,6 +149,93 @@ export const en = {
     phone: "Phone",
     address: "Registered address",
     empty: "Contact details have not been published yet. Please check back soon.",
+    idCode: "Company ID code",
+    formTitle: "Send us a message",
+    formIntro: "We usually reply within one working day.",
+    form: {
+      sent: "Thanks! Your message is on its way. We'll reply by email.",
+      tooMany: "You've sent several messages already. Please try again in a few minutes.",
+      unavailable: "The form isn't available right now. Please email us instead.",
+      failed: "We couldn't send your message. Please try again.",
+    },
+  },
+
+  pricing: {
+    title: "Pricing",
+    description: "DevskStudio plans for barbershops: monthly price in lari, what's included, and how phone costs work.",
+    eyebrow: "Pricing",
+    heading: "Simple monthly plans",
+    intro: "One price per shop, no setup fee. Cancel any time from your dashboard.",
+    perMonth: "/ month",
+    upTo: "Up to {n} barbers",
+    oneBarber: "1 barber",
+    popular: "Most popular",
+    choose: "Start with {plan}",
+    seeAll: "See all plan details",
+    twilioTitle: "Phone calls and SMS",
+    twilioNote: "Calls and text messages go through Twilio and are billed separately, at cost. As a rough guide for Georgian numbers: about {minute} per call minute and {sms} per SMS.",
+    placeholder: "Prices are preliminary and may change before launch.",
+    vat: "Prices include VAT where it applies.",
+    plans: {
+      solo: {
+        name: "Solo",
+        blurb: "For a barber working on their own.",
+        features: ["Voice agent answers every call, day and night", "Your own booking calendar", "SMS confirmations and reminders", "Georgian and English"],
+      },
+      studio: {
+        name: "Studio",
+        blurb: "For a shop with a small team.",
+        features: ["Everything in Solo", "A calendar column for each barber", "Manager and barber accounts", "Client history and notes"],
+      },
+      pro: {
+        name: "Pro",
+        blurb: "For busy shops and several chairs.",
+        features: ["Everything in Studio", "Priority support", "Data export (CSV)", "Help connecting your phone line"],
+      },
+    },
+  },
+
+  faq: {
+    eyebrow: "FAQ",
+    title: "Questions shop owners ask",
+    items: [
+      {
+        q: "How much does it cost?",
+        a: "A fixed monthly price per shop, depending on how many barbers you have. Call and SMS charges from Twilio are billed separately, at cost.",
+      },
+      {
+        q: "Do I need a Twilio account?",
+        a: "For phone calls and SMS, yes: your shop line forwards to a Twilio number that DevskStudio answers, and we help you set it up. The dashboard and the in-browser voice agent work without it.",
+      },
+      {
+        q: "What if the agent doesn't understand a caller?",
+        a: "It asks again and reads the options as a short menu the caller can answer by voice or keypad. If it still can't help, it ends the call politely and the call is logged in your dashboard, so you can call back.",
+      },
+      {
+        q: "Is my clients' data safe?",
+        a: "Each shop's data is completely separated from every other shop. Connections are encrypted, passwords are stored hashed, and we never use your data for advertising.",
+      },
+      {
+        q: "Can I cancel any time?",
+        a: "Yes. There's no long-term contract. Our Refund Policy explains what happens to the current billing period.",
+      },
+    ],
+  },
+
+  sample: {
+    eyebrow: "Hear it",
+    title: "A real booking call, in Georgian",
+    intro: "This is how the agent sounds to your clients. The transcript is below, translated.",
+    transcript: "Transcript",
+    agent: "Agent",
+    caller: "Client",
+    lines: [
+      { who: "agent", text: "Hello, you've reached Barber House. How can I help?" },
+      { who: "caller", text: "I'd like a haircut tomorrow, at two." },
+      { who: "agent", text: "Tomorrow at 14:00 is free with Giorgi. Shall I book it?" },
+      { who: "caller", text: "Yes, please." },
+      { who: "agent", text: "Done: a haircut with Giorgi, tomorrow at 14:00. You'll get a confirmation by SMS." },
+    ],
   },
 
   legal: {
@@ -585,13 +677,20 @@ export const en = {
       showPassword: "Show password",
       hidePassword: "Hide password",
     },
+    contactForm: {
+      form: "Contact form",
+      name: "Your name",
+      email: "Email",
+      salon: "Salon name (optional)",
+      message: "Message",
+      send: "Send message",
+      sending: "Sending…",
+    },
     cookies: {
       region: "Cookie notice",
-      title: "Cookies on DevskStudio",
-      body: "We only use cookies that are needed to keep you signed in and remember your choices, such as language. We do not use advertising or tracking cookies. Read our",
+      body: "We only use essential cookies (sign-in, language). No tracking.",
       policy: "Cookie Policy",
-      accept: "Accept",
-      essential: "Essential only",
+      dismiss: "Got it",
     },
     error: {
       title: "Something went wrong",

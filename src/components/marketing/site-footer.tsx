@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/components/locale-link";
 import { BrandMark } from "@/components/logo";
 import { getI18n } from "@/i18n/server";
 import { legalPages, marketingNav, site } from "@/lib/site";

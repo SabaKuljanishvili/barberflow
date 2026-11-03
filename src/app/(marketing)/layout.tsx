@@ -1,28 +1,21 @@
 import { BackgroundFX } from "@/components/marketing/background-fx";
 import { SiteFooter } from "@/components/marketing/site-footer";
 import { SiteHeader } from "@/components/marketing/site-header";
-import { SmoothScroll } from "@/components/smooth-scroll";
 
-// #smooth-wrapper > #smooth-content is the structure GSAP ScrollSmoother
-// needs. Keep position: fixed UI outside it (it lives in the root layout).
+// Native scrolling only (CSS scroll-behavior in landing.css). The old
+// transform-based smoother desynced window.scrollY from what was on screen
+// and broke keyboard scrolling, anchors, find-in-page and screen readers.
 export default function MarketingLayout({ children }: { children: React.ReactNode }) {
   return (
-    <>
-      <SmoothScroll />
-      <div id="smooth-wrapper">
-        <div id="smooth-content">
-          <div className="bf">
-            <BackgroundFX />
-            <div className="in">
-              <SiteHeader />
-              <main id="main" tabIndex={-1}>
-                {children}
-              </main>
-              <SiteFooter />
-            </div>
-          </div>
-        </div>
+    <div className="bf">
+      <BackgroundFX />
+      <div className="in">
+        <SiteHeader />
+        <main id="main" tabIndex={-1}>
+          {children}
+        </main>
+        <SiteFooter />
       </div>
-    </>
+    </div>
   );
 }

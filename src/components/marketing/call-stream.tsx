@@ -15,7 +15,9 @@ type Text = Dictionary["home"]["callStream"];
 type RowState = "ring" | "ai" | "ok";
 type Row = { id: number; state: RowState; booking: number; digits: number; prefilled?: boolean };
 
+// Believable demo numbers: not every call becomes a booking.
 const START = 124;
+const START_BOOKED = 97;
 const MAX_ROWS = 7;
 // Complete at rest: bookings #1, #2, #3 from the top, as in the reference.
 const PREFILL: Row[] = [0, 1, 2].map((booking) => ({ id: -1 - booking, state: "ok", booking, digits: 0, prefilled: true }));
@@ -87,7 +89,7 @@ export function CallStream({ text, locale, today: serverToday }: { text: Text; l
   const reduce = useReducedMotion();
   const [rows, setRows] = useState<Row[]>(PREFILL);
   const [calls, setCalls] = useState(START);
-  const [booked, setBooked] = useState(START);
+  const [booked, setBooked] = useState(START_BOOKED);
   const [sound, setSound] = useState(false);
   const soundRef = useRef(false);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -100,7 +102,7 @@ export function CallStream({ text, locale, today: serverToday }: { text: Text; l
   // Reduced motion: the prefilled list only.
   const shownRows = reduce ? PREFILL : rows;
   const shownCalls = reduce ? START : calls;
-  const shownBooked = reduce ? START : booked;
+  const shownBooked = reduce ? START_BOOKED : booked;
 
   useEffect(() => {
     const root = rootRef.current;
@@ -194,7 +196,7 @@ export function CallStream({ text, locale, today: serverToday }: { text: Text; l
               </span>
               <span className={s.cnt}>
                 {text.booked}{" "}
-                <b key={shownBooked} className={shownBooked !== START ? s.bump : undefined}>
+                <b key={shownBooked} className={shownBooked !== START_BOOKED ? s.bump : undefined}>
                   {shownBooked}
                 </b>
               </span>

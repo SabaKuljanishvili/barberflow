@@ -60,21 +60,33 @@ export function matchChoice(input: { digits?: string | null; speech?: string | n
   if (!speech) return null;
 
   // Label match first: "fade" should not be read as an ordinal.
-  let best: { index: number; score: number } | null = null;
-  options.forEach((label, index) => {
-    const words = normalize(label).split(" ").filter((w) => w.length > 2);
-    if (!words.length) return;
-    const hits = words.filter((w) => speech.includes(w)).length;
-    const score = hits / words.length;
-    if (hits > 0 && (!best || score > best.score)) best = { index, score };
-  });
-  if (best) return (best as { index: number }).index;
+  const byLabel = matchLabel(speech, options);
+  if (byLabel !== null) return byLabel;
 
   for (const token of speech.split(" ")) {
     const n = /^\d$/.test(token) ? Number(token) : NUMBER_WORDS[token];
     if (n && n <= options.length) return n - 1;
   }
   return null;
+}
+
+/**
+ * Index of the option whose label words best appear in `speech`; no
+ * ordinals. Used where a number would mean something else, such as a barber
+ * named in the same sentence as the service ("ხვალ ორზე გიორგისთან").
+ */
+export function matchLabel(speech: string, options: string[]): number | null {
+  const said = normalize(speech);
+  if (!said) return null;
+  let best: { index: number; score: number } | null = null;
+  options.forEach((label, index) => {
+    const words = normalize(label).split(" ").filter((w) => w.length > 2);
+    if (!words.length) return;
+    const hits = words.filter((w) => said.includes(w)).length;
+    const score = hits / words.length;
+    if (hits > 0 && (!best || score > best.score)) best = { index, score };
+  });
+  return best ? (best as { index: number }).index : null;
 }
 
 export function isAffirmative(input: { digits?: string | null; speech?: string | null }): boolean | null {

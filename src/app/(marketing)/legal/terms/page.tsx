@@ -21,11 +21,11 @@ function En({ company }: { company: string }) {
   return (
     <LegalPage
       page="terms"
-      intro={`These terms form an agreement between ${company} and the business that creates a BarberFlow account. By creating an account you confirm you can bind that business.`}
+      intro={`These terms form an agreement between ${company} and the business that creates a DevskStudio account. By creating an account you confirm you can bind that business.`}
     >
       <h2>1. The service</h2>
       <p>
-        BarberFlow provides appointment management, an automated phone booking agent and SMS reminders. Phone and SMS
+        DevskStudio provides appointment management, an automated phone booking agent and SMS reminders. Phone and SMS
         features require a phone number from our telephony provider, configured by you.
       </p>
 
@@ -44,7 +44,7 @@ function En({ company }: { company: string }) {
 
       <h2>4. Acceptable use</h2>
       <ul>
-        <li>No unsolicited marketing messages through BarberFlow numbers.</li>
+        <li>No unsolicited marketing messages through DevskStudio numbers.</li>
         <li>No attempts to access other shops&apos; data, probe, or overload the service.</li>
         <li>No unlawful, misleading or abusive content.</li>
       </ul>
@@ -57,7 +57,7 @@ function En({ company }: { company: string }) {
 
       <h2>6. Availability</h2>
       <p>
-        We work to keep BarberFlow available but do not guarantee uninterrupted service. Automated phone booking depends
+        We work to keep DevskStudio available but do not guarantee uninterrupted service. Automated phone booking depends
         on third-party networks and speech recognition, and may occasionally misunderstand a caller.
       </p>
 
@@ -83,11 +83,11 @@ function Ka({ company }: { company: string }) {
   return (
     <LegalPage
       page="terms"
-      intro={`ეს პირობები წარმოადგენს შეთანხმებას ${company}-სა და იმ ბიზნესს შორის, რომელიც BarberFlow-ის ანგარიშს ქმნის. ანგარიშის შექმნით ადასტურებთ, რომ უფლებამოსილი ხართ, ამ ბიზნესის სახელით იმოქმედოთ.`}
+      intro={`ეს პირობები წარმოადგენს შეთანხმებას ${company}-სა და იმ ბიზნესს შორის, რომელიც DevskStudio-ის ანგარიშს ქმნის. ანგარიშის შექმნით ადასტურებთ, რომ უფლებამოსილი ხართ, ამ ბიზნესის სახელით იმოქმედოთ.`}
     >
       <h2>1. მომსახურება</h2>
       <p>
-        BarberFlow გთავაზობთ ჯავშნების მართვას, ავტომატურ სატელეფონო აგენტს და SMS შეხსენებებს. ზარებისა და SMS-ის
+        DevskStudio გთავაზობთ ჯავშნების მართვას, ავტომატურ სატელეფონო აგენტს და SMS შეხსენებებს. ზარებისა და SMS-ის
         ფუნქციებისთვის საჭიროა ჩვენი სატელეკომუნიკაციო პროვაიდერის ნომერი, რომელსაც თქვენ აკონფიგურირებთ.
       </p>
 
@@ -107,7 +107,7 @@ function Ka({ company }: { company: string }) {
 
       <h2>4. დასაშვები გამოყენება</h2>
       <ul>
-        <li>აკრძალულია BarberFlow-ის ნომრებით არასასურველი სარეკლამო შეტყობინებების გაგზავნა.</li>
+        <li>აკრძალულია DevskStudio-ის ნომრებით არასასურველი სარეკლამო შეტყობინებების გაგზავნა.</li>
         <li>აკრძალულია სხვა სალონების მონაცემებზე წვდომის მცდელობა, სისტემის გამოკვლევა ან გადატვირთვა.</li>
         <li>აკრძალულია უკანონო, შეცდომაში შემყვანი ან შეურაცხმყოფელი შინაარსი.</li>
       </ul>
@@ -121,7 +121,7 @@ function Ka({ company }: { company: string }) {
 
       <h2>6. ხელმისაწვდომობა</h2>
       <p>
-        ვცდილობთ, BarberFlow მუდმივად ხელმისაწვდომი იყოს, თუმცა უწყვეტ მუშაობას ვერ გარანტირებთ. ავტომატური სატელეფონო
+        ვცდილობთ, DevskStudio მუდმივად ხელმისაწვდომი იყოს, თუმცა უწყვეტ მუშაობას ვერ გარანტირებთ. ავტომატური სატელეფონო
         ჯავშანი დამოკიდებულია მესამე მხარის ქსელებსა და მეტყველების ამოცნობაზე და ზოგჯერ შესაძლოა დამრეკი ვერ გაიგოს.
       </p>
 

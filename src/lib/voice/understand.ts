@@ -36,7 +36,7 @@ const Result = z.object({
   answer: z.string().nullable(),
 });
 
-const SYSTEM = `You are the phone receptionist for a barber shop that uses BarberFlow. A caller is in an automated booking call. They just heard a numbered menu and answered by voice. Speech recognition on phone lines is noisy, especially for Georgian, so the transcript may be misspelled, partial, or mix Georgian and English.
+const SYSTEM = `You are the phone receptionist for a barber shop that uses DevskStudio. A caller is in an automated booking call. They just heard a numbered menu and answered by voice. Speech recognition on phone lines is noisy, especially for Georgian, so the transcript may be misspelled, partial, or mix Georgian and English.
 
 Decide which of these the caller did:
 - "choice": they picked one menu option, by number, ordinal, name, or description ("the beard one", "Tuesday", "მეორე", "ნებისმიერი"). Set option to its 1-based number.

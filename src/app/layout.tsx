@@ -1,8 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import { Manrope, Noto_Sans_Georgian, Noto_Serif, Noto_Serif_Georgian } from "next/font/google";
+import localFont from "next/font/local";
 import { connection } from "next/server";
 import { CookieBanner } from "@/components/cookie-banner";
-import { SmoothScroll } from "@/components/smooth-scroll";
 import { ThemeScript } from "@/components/theme/theme-script";
 import { I18nProvider } from "@/i18n/client";
 import { OG_LOCALE } from "@/i18n/config";
@@ -26,6 +26,16 @@ const serifGeorgian = Noto_Serif_Georgian({
   weight: ["500", "600", "700"],
   variable: "--font-serif-georgian",
   display: "swap",
+});
+// Hero headline only (--font-display). Self-hosted, subset to Latin + Georgian; licence in fonts/firago/OFL.txt.
+const firago = localFont({
+  src: [
+    { path: "../fonts/firago/FiraGO-ExtraBold.woff2", weight: "800", style: "normal" },
+  ],
+  variable: "--font-firago",
+  display: "swap",
+  preload: true,
+  fallback: ["Noto Sans Georgian", "Manrope", "system-ui", "sans-serif"],
 });
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -70,13 +80,12 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
     <html
       lang={locale}
       suppressHydrationWarning
-      className={`${manrope.variable} ${georgian.variable} ${serif.variable} ${serifGeorgian.variable}`}
+      className={`${manrope.variable} ${georgian.variable} ${serif.variable} ${serifGeorgian.variable} ${firago.variable}`}
     >
       <head>
         <ThemeScript />
       </head>
       <body className="min-h-dvh bg-canvas text-ink">
-        <SmoothScroll />
         <I18nProvider locale={locale} messages={t.client}>
           <a
             href="#main"

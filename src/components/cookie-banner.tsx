@@ -6,7 +6,7 @@ import { useI18n } from "@/i18n/client";
 
 const COOKIE = "bf_cookie_consent";
 
-// BarberFlow sets only strictly necessary cookies (sign-in session, this
+// DevskStudio sets only strictly necessary cookies (sign-in session, this
 // choice). The banner records acknowledgement; no optional trackers load
 // regardless of the answer.
 export function CookieBanner() {

@@ -1,8 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import type { CSSProperties } from "react";
 import { JsonLd } from "@/components/json-ld";
-import { CallCard } from "@/components/marketing/call-card";
+import { CallStream } from "@/components/marketing/call-stream";
+import { isoDateIn } from "@/components/marketing/call-stream-data";
 import { Features } from "@/components/marketing/features";
+import { HeroHeadline } from "@/components/marketing/hero-headline";
+import { splitHeadline } from "@/components/marketing/hero-headline-data";
 import { localBusinessSchema, organizationSchema, softwareSchema } from "@/lib/structured-data";
 import { site } from "@/lib/site";
 import { getI18n } from "@/i18n/server";
@@ -26,8 +30,9 @@ function Arrow() {
 }
 
 export default async function HomePage() {
-  const { t } = await getI18n();
+  const { locale, t } = await getI18n();
   const h = t.home;
+  const title = { before: h.titleBefore, green: h.titleGreen, after: h.titleAfter };
   const business = localBusinessSchema();
   return (
     <>
@@ -38,25 +43,27 @@ export default async function HomePage() {
       <section id="top" className="wrap bf-cb hero-sec">
         <div className="hero">
           <div>
-            <span className="eyebrow r d1">{h.eyebrow}</span>
-            <h1 className="serif h1 r d2">
-              {h.titleBefore}
-              <em>{h.titleEm}</em>
-              {h.titleAfter}
-            </h1>
-            <p className="lede r d3">{h.lede}</p>
-            <div className="ctas r d4">
-              <Link className="bf-btn bf-btn-p" href="/signup">
-                {h.ctaPrimary}
-                <Arrow />
-              </Link>
-              <Link className="bf-btn bf-btn-g" href="/contact">
-                {h.ctaSecondary}
-              </Link>
+            <span className="eyebrow">
+              <i aria-hidden="true" />
+              {h.eyebrow}
+            </span>
+            <HeroHeadline text={title} />
+            {/* Lede and buttons rise in just before the last letter lands. */}
+            <div style={{ "--after": `${splitHeadline(title).after}ms` } as CSSProperties}>
+              <p className="lede">{h.lede}</p>
+              <div className="ctas">
+                <Link className="bf-btn bf-btn-p" href="/signup">
+                  {h.ctaPrimary}
+                  <Arrow />
+                </Link>
+                <Link className="bf-btn bf-btn-g" href="/contact">
+                  {h.ctaSecondary}
+                </Link>
+              </div>
             </div>
           </div>
-          {/* The booked barber's initial, as on the booking card. */}
-          <CallCard text={h.call} initial={h.scenes.barbers[0][0]} />
+          {/* "Today" for the booking dates, in the shop's time zone. */}
+          <CallStream text={h.callStream} locale={locale} today={isoDateIn("Asia/Tbilisi")} />
         </div>
       </section>
 

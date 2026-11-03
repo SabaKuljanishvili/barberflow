@@ -1,6 +1,8 @@
+import { readFile } from "node:fs/promises";
+import { join } from "node:path";
 import { ImageResponse } from "next/og";
 import { en } from "@/i18n/dictionaries/en";
-import { site } from "@/lib/site";
+import { BRAND_MARK_SRC, site } from "@/lib/site";
 
 // Crawlers fetch this without a language cookie, and the default OG font has
 // no Georgian glyphs, so the card stays in English.
@@ -9,7 +11,8 @@ export const alt = `${site.name}: ${en.meta.tagline}`;
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
-export default function OpenGraphImage() {
+export default async function OpenGraphImage() {
+  const mark = await readFile(join(process.cwd(), "public", BRAND_MARK_SRC), "base64");
   return new ImageResponse(
     (
       <div
@@ -25,9 +28,8 @@ export default function OpenGraphImage() {
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
-          <div style={{ width: 72, height: 72, borderRadius: 22, background: "#064E3B", display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <div style={{ width: 28, height: 40, borderLeft: "8px solid #10B981", borderRight: "8px solid #10B981" }} />
-          </div>
+          {/* eslint-disable-next-line @next/next/no-img-element -- ImageResponse renders a plain img */}
+          <img src={`data:image/png;base64,${mark}`} width={72} height={72} alt="" />
           <span style={{ fontSize: 44, fontWeight: 700, color: "#111827" }}>{site.name}</span>
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>

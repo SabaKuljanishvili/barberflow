@@ -2,14 +2,26 @@ import "server-only";
 import { INTL_LOCALE, fmt, isLocale, otherLocale, type Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/dictionaries/en";
 import { dictionaryFor } from "@/i18n/server";
-import { spokenAmount } from "@/lib/format";
 import { createSupabaseAdminClient } from "@/lib/supabase/server";
 import type { Tables } from "@/lib/supabase/database.types";
-import { findOpenSlots, formatInZone } from "@/lib/time";
 import { extractFirstName, matchChoice, requestedLanguage } from "./match";
+import {
+  bookAppointment,
+  describeService as describe,
+  findOrCreateClient,
+  getClient,
+  getService,
+  listBarbers,
+  listServices,
+  logCallOutcome,
+  nextSlots,
+  spokenDate as spoken,
+  type Db,
+  type Salon,
+} from "./salon";
 import { speak, speakableLocale } from "./tts";
 import { understand, type Understanding } from "./understand";
-import { VoiceResponse, twilioClient, webhookUrl, type TwilioParams } from "./twilio";
+import { VoiceResponse, twilioClient, twilioConfig, webhookUrl, type TwilioParams } from "./twilio";
 
 // Inbound call state machine. Each step is a Twilio webhook; state travels in
 // the callback URL's query string, which Twilio signs, so it cannot be forged.
@@ -23,17 +35,12 @@ import { VoiceResponse, twilioClient, webhookUrl, type TwilioParams } from "./tw
 // which may pick the option or answer a question about the salon. Answers
 // don't use up an attempt; `q` counts them so a call can't loop forever.
 
-type Db = ReturnType<typeof createSupabaseAdminClient>;
-type Salon = Tables<"salons">;
 type Query = URLSearchParams;
 type Ctx = { db: Db; salon: Salon; params: TwilioParams; query: Query; locale: Locale; t: Dictionary["voice"] };
 type Twiml = InstanceType<typeof VoiceResponse>;
 
 const MAX_ATTEMPTS = 2;
 const MAX_QUESTIONS = 3;
-
-/** How dates are read out: weekday, day, month and time; no year. */
-const SPOKEN_DATE: Intl.DateTimeFormatOptions = { weekday: "long", day: "numeric", month: "long", hour: "numeric", minute: "2-digit", dateStyle: undefined, timeStyle: undefined };
 
 export type Step = "incoming" | "service" | "barber" | "slot" | "name";
 export const STEPS: Step[] = ["incoming", "service", "barber", "slot", "name"];
@@ -95,18 +102,7 @@ async function incoming(ctx: Ctx): Promise<string> {
     return r.toString();
   }
 
-  const found = await db.from("clients").select("*").eq("salon_id", salon.id).eq("phone_number", from).maybeSingle();
-  if (found.error) throw new Error(`client lookup failed: ${found.error.message}`);
-  let client = found.data;
-  if (!client) {
-    const inserted = await db
-      .from("clients")
-      .upsert({ salon_id: salon.id, phone_number: from }, { onConflict: "salon_id,phone_number" })
-      .select("*")
-      .single();
-    if (inserted.error) throw new Error(`client insert failed: ${inserted.error.message}`);
-    client = inserted.data;
-  }
+  const client = await findOrCreateClient(ctx, from);
 
   // A returning caller's own language beats the salon default on the first
   // step; after that `l` is always set.
@@ -211,7 +207,7 @@ async function chooseBarber(ctx: Ctx): Promise<string> {
 }
 
 async function chooseSlot(ctx: Ctx): Promise<string> {
-  const { db, salon } = ctx;
+  const { salon } = ctx;
   const service = await getService(ctx, ctx.query.get("s"));
   const client = await getClient(ctx, clientId(ctx));
   if (!service || !client) return restart(ctx);
@@ -243,29 +239,16 @@ async function chooseSlot(ctx: Ctx): Promise<string> {
   const barber = barbers.find((b) => b.id === offer.staffId);
   if (!barber) return restart(ctx);
 
-  const { data: appointment, error } = await db
-    .from("appointments")
-    .insert({
-      salon_id: salon.id,
-      client_id: client.id,
-      staff_id: barber.id,
-      service_id: service.id,
-      appointment_time: offer.start.toISOString(),
-      status: "confirmed",
-      source: "voice",
-    })
-    .select("id")
-    .single();
+  const booked = await bookAppointment(ctx, { clientId: client.id, staffId: barber.id, serviceId: service.id, start: offer.start });
 
   const r = new VoiceResponse();
-  if (error?.code === "23P01") {
+  if (!booked.ok) {
     say(ctx, r, ctx.t.slotTaken);
     reofferSlots(r, ctx, Number(ctx.query.get("a") ?? "0"));
     return r.toString();
   }
-  if (error || !appointment) throw new Error(error?.message ?? "insert failed");
 
-  await logOutcome(ctx, "booked", appointment.id);
+  await logOutcome(ctx, "booked", booked.id);
   const when = spokenDate(ctx, offer.start);
   const details = { salon: salon.name, service: service.name, barber: barber.full_name, when };
   await sendSms(salon, client.phone_number, fmt(dictionaryFor(ctx.locale).sms.booked, details));
@@ -321,7 +304,7 @@ function sttLanguage(ctx: Ctx) {
 }
 
 function spokenDate(ctx: Ctx, date: Date) {
-  return formatInZone(date, ctx.salon.timezone, SPOKEN_DATE, INTL_LOCALE[ctx.locale]);
+  return spoken(ctx.salon, ctx.locale, date);
 }
 
 function input(ctx: Ctx) {
@@ -333,7 +316,7 @@ function clientId(ctx: Ctx) {
 }
 
 function describeService(ctx: Ctx, s: Tables<"services">) {
-  return fmt(ctx.t.serviceItem, { name: s.name, price: spokenAmount(s.price), minutes: s.duration_minutes });
+  return describe(ctx.t, s);
 }
 
 function gatherMenu(ctx: Ctx, r: Twiml, prompt: string, options: string[], action: string, { offerLanguageSwitch = false } = {}) {
@@ -412,72 +395,8 @@ function questions(ctx: Ctx) {
   return Number(ctx.query.get("q") ?? "0");
 }
 
-async function listServices({ db, salon }: Ctx) {
-  const { data } = await db.from("services").select("*").eq("salon_id", salon.id).order("name").limit(9);
-  return data ?? [];
-}
-
-async function listBarbers({ db, salon }: Ctx) {
-  const { data } = await db.from("profiles").select("id, full_name").eq("salon_id", salon.id).order("full_name").limit(8);
-  return data ?? [];
-}
-
-async function getService({ db, salon }: Ctx, id: string | null) {
-  if (!id) return null;
-  const { data } = await db.from("services").select("*").eq("salon_id", salon.id).eq("id", id).maybeSingle();
-  return data;
-}
-
-async function getClient({ db, salon }: Ctx, id: string) {
-  if (!id) return null;
-  const { data } = await db.from("clients").select("*").eq("salon_id", salon.id).eq("id", id).maybeSingle();
-  return data;
-}
-
-async function nextSlots(ctx: Ctx, service: Tables<"services">, barbers: { id: string }[], count: number) {
-  const { db, salon } = ctx;
-  const now = new Date();
-  const horizon = new Date(now.getTime() + 15 * 86_400_000);
-  const { data: busy } = await db
-    .from("appointments")
-    .select("staff_id, appointment_time, ends_at")
-    .eq("salon_id", salon.id)
-    .in("status", ["pending", "confirmed"])
-    .in("staff_id", barbers.map((b) => b.id))
-    .gte("ends_at", now.toISOString())
-    .lt("appointment_time", horizon.toISOString());
-
-  const all = barbers.flatMap((b) =>
-    findOpenSlots({
-      from: now,
-      timeZone: salon.timezone,
-      opensAt: salon.opens_at,
-      closesAt: salon.closes_at,
-      workingDays: salon.working_days,
-      durationMinutes: service.duration_minutes,
-      busy: (busy ?? [])
-        .filter((x) => x.staff_id === b.id)
-        .map((x) => ({ start: new Date(x.appointment_time), end: new Date(x.ends_at) })),
-      count,
-    }).map((start) => ({ staffId: b.id, start })),
-  );
-
-  const seen = new Set<number>();
-  return all
-    .sort((a, b) => a.start.getTime() - b.start.getTime())
-    .filter((o) => !seen.has(o.start.getTime()) && seen.add(o.start.getTime()))
-    .slice(0, count);
-}
-
 async function logOutcome(ctx: Ctx, outcome: Tables<"call_logs">["outcome"], appointmentId?: string) {
-  const sid = ctx.params.CallSid;
-  if (!sid) return;
-  const { error } = await ctx.db
-    .from("call_logs")
-    .update({ outcome, ...(appointmentId ? { appointment_id: appointmentId } : {}) })
-    .eq("call_sid", sid)
-    .eq("salon_id", ctx.salon.id);
-  if (error) console.error("call outcome update failed", { salonId: ctx.salon.id, outcome, err: error.message });
+  await logCallOutcome(ctx, ctx.params.CallSid, outcome, appointmentId);
 }
 
 export async function recordCallStatus(params: TwilioParams): Promise<void> {
@@ -510,7 +429,8 @@ export async function recordCallStatus(params: TwilioParams): Promise<void> {
 }
 
 export async function sendSms(salon: Pick<Salon, "id" | "phone_number">, to: string, body: string): Promise<boolean> {
-  if (!salon.phone_number) return false;
+  // No Twilio (local testing, web-only setup): bookings still work, no SMS.
+  if (!salon.phone_number || !twilioConfig()) return false;
   try {
     await twilioClient().messages.create({ from: salon.phone_number, to, body });
     return true;

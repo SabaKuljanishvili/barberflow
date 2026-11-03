@@ -4,7 +4,7 @@ vi.mock("server-only", () => ({}));
 const { describeTurn, toUnderstanding, understand } = await import("./understand");
 
 const facts = {
-  salon: { name: "BarberFlow Tbilisi", opens_at: "10:00:00", closes_at: "20:00:00", working_days: [1, 2, 3, 4, 5, 6] },
+  salon: { name: "DevskStudio Tbilisi", opens_at: "10:00:00", closes_at: "20:00:00", working_days: [1, 2, 3, 4, 5, 6] },
   services: [
     { name: "თმის შეჭრა", price: 25, duration_minutes: 30 },
     { name: "წვერის მოწესრიგება", price: 15, duration_minutes: 20 },

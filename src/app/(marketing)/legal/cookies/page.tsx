@@ -11,9 +11,9 @@ export async function generateMetadata(): Promise<Metadata> {
 
 const content = {
   en: {
-    intro: "BarberFlow sets only strictly necessary cookies. We do not use analytics, advertising or third-party tracking cookies.",
+    intro: "DevskStudio sets only strictly necessary cookies. We do not use analytics, advertising or third-party tracking cookies.",
     setHeading: "Cookies we set",
-    caption: "Cookies used by BarberFlow",
+    caption: "Cookies used by DevskStudio",
     columns: ["Name", "Purpose", "Duration"],
     cookies: [
       { name: "sb-*-auth-token", purpose: "Keeps staff signed in to the dashboard.", duration: "Session, refreshed while active" },
@@ -22,12 +22,12 @@ const content = {
     ],
     choicesHeading: "Your choices",
     choices:
-      "Because these cookies are needed for the service to work, they cannot be switched off in BarberFlow. You can delete cookies in your browser at any time; you will then be signed out. If we ever add optional cookies we will ask for consent first and update this page.",
+      "Because these cookies are needed for the service to work, they cannot be switched off in DevskStudio. You can delete cookies in your browser at any time; you will then be signed out. If we ever add optional cookies we will ask for consent first and update this page.",
   },
   ka: {
-    intro: "BarberFlow იყენებს მხოლოდ მკაცრად აუცილებელ cookie-ებს. ანალიტიკის, სარეკლამო ან მესამე მხარის თვალთვალის cookie-ებს არ ვიყენებთ.",
+    intro: "DevskStudio იყენებს მხოლოდ მკაცრად აუცილებელ cookie-ებს. ანალიტიკის, სარეკლამო ან მესამე მხარის თვალთვალის cookie-ებს არ ვიყენებთ.",
     setHeading: "ჩვენი cookie-ები",
-    caption: "BarberFlow-ის მიერ გამოყენებული cookie-ები",
+    caption: "DevskStudio-ის მიერ გამოყენებული cookie-ები",
     columns: ["დასახელება", "დანიშნულება", "ვადა"],
     cookies: [
       { name: "sb-*-auth-token", purpose: "თანამშრომლებს მართვის პანელში შესულს ტოვებს.", duration: "სესია, განახლდება აქტიურობისას" },
@@ -36,7 +36,7 @@ const content = {
     ],
     choicesHeading: "თქვენი არჩევანი",
     choices:
-      "რადგან ეს cookie-ები მომსახურების მუშაობისთვის აუცილებელია, BarberFlow-ში მათი გამორთვა შეუძლებელია. cookie-ების წაშლა ბრაუზერში ნებისმიერ დროს შეგიძლიათ, რის შემდეგაც ანგარიშიდან გამოხვალთ. თუ ოდესმე დავამატებთ არასავალდებულო cookie-ებს, ჯერ თანხმობას მოგთხოვთ და ამ გვერდს განვაახლებთ.",
+      "რადგან ეს cookie-ები მომსახურების მუშაობისთვის აუცილებელია, DevskStudio-ში მათი გამორთვა შეუძლებელია. cookie-ების წაშლა ბრაუზერში ნებისმიერ დროს შეგიძლიათ, რის შემდეგაც ანგარიშიდან გამოხვალთ. თუ ოდესმე დავამატებთ არასავალდებულო cookie-ებს, ჯერ თანხმობას მოგთხოვთ და ამ გვერდს განვაახლებთ.",
   },
 };
 

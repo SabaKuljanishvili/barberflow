@@ -20,6 +20,8 @@ const SAY_FALLBACK = { voice: "Polly.Joanna-Neural", language: "en-US" };
 /** Wav at the phone network's sample rate: no resampling on Twilio's side. */
 export const AUDIO_FORMAT = "riff-8khz-16bit-mono-pcm";
 export const AUDIO_CONTENT_TYPE = "audio/wav";
+/** Browser playback (web voice agent): small, and decodable by every AudioContext. */
+export const WEB_AUDIO_FORMAT = "audio-24khz-48kbitrate-mono-mp3";
 
 export function azureConfig() {
   const env = serverEnv();
@@ -45,7 +47,8 @@ export function speakableLocale(wanted: Locale): Locale {
 
 /** Signing key for TTS URLs, derived so no extra secret is needed. */
 export function speechSecret(): string {
-  return `tts:${serverEnv().TWILIO_AUTH_TOKEN}`;
+  const env = serverEnv();
+  return `tts:${env.TWILIO_AUTH_TOKEN ?? env.SUPABASE_SERVICE_ROLE_KEY}`;
 }
 
 export function speak(node: Speaker, text: string, locale: Locale): void {
@@ -62,7 +65,7 @@ export function speak(node: Speaker, text: string, locale: Locale): void {
 }
 
 /** Calls Azure's REST endpoint. Throws on any non-audio answer. */
-export async function synthesize(text: string, voice: string): Promise<ArrayBuffer> {
+export async function synthesize(text: string, voice: string, format = AUDIO_FORMAT): Promise<ArrayBuffer> {
   const azure = azureConfig();
   if (!azure) throw new Error("Azure Speech is not configured");
   const res = await fetch(`https://${azure.region}.tts.speech.microsoft.com/cognitiveservices/v1`, {
@@ -70,7 +73,7 @@ export async function synthesize(text: string, voice: string): Promise<ArrayBuff
     headers: {
       "Ocp-Apim-Subscription-Key": azure.key,
       "Content-Type": "application/ssml+xml",
-      "X-Microsoft-OutputFormat": AUDIO_FORMAT,
+      "X-Microsoft-OutputFormat": format,
       "User-Agent": "barberflow",
     },
     body: buildSsml(text, voice),

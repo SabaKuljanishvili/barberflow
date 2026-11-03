@@ -16,6 +16,9 @@
   --green-ink: #0b5a43;
   --green-soft: #dee9e1;
   --on-green: #f6f3ec;
+  --glint: #3fb585; /* highlight that sweeps over the hero's green phrase */
+  --gloss: #0b5a43; /* body colour of the glossy hero phrase (brand star green) */
+  --gloss-glint: #3fb585; /* glint over --gloss */
   --busy: #e7e1d4;
   --warn: #a9531c;
   --warn-soft: color-mix(in srgb, var(--warn) 8%, var(--surface));
@@ -27,6 +30,11 @@
   --grain-blend: multiply;
   --shadow: 0 30px 60px -40px rgba(21, 33, 28, 0.45);
   --shadow-sm: 0 1px 2px rgba(21, 33, 28, 0.04), 0 8px 24px -12px rgba(21, 33, 28, 0.12);
+  --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+  --spring: cubic-bezier(0.3, 1.4, 0.5, 1);
+  --out: cubic-bezier(0.16, 1, 0.3, 1);
+  /* Hero headline only; body text stays Manrope / Noto Sans Georgian. */
+  --font-display: var(--font-firago), "Noto Sans Georgian", "Manrope", system-ui, sans-serif;
 }
 
 :root[data-theme="dark"] {
@@ -42,6 +50,9 @@
   --green-ink: #63d5a5;
   --green-soft: #16271f;
   --on-green: #f3f7f4;
+  --glint: #d9ffee;
+  --gloss: #22805d; /* 3.8:1 on --bg; the phrase is large text */
+  --gloss-glint: #63d5a5;
   --busy: #252727;
   --warn: #e8915c;
   --danger: #f0897a;

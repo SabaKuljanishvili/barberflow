@@ -1,4 +1,4 @@
-# BarberFlow
+# DevskStudio
 
 Multi-tenant SaaS for barbershops: an automated phone booking agent, staff calendars, and SMS reminders.
 

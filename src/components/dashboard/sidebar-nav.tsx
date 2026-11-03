@@ -2,13 +2,14 @@
 
 import Link, { useLinkStatus } from "next/link";
 import { usePathname } from "next/navigation";
-import { CalendarDays, LayoutGrid, Scissors, Settings, UserRound, Users, Contact } from "lucide-react";
+import { AudioLines, CalendarDays, LayoutGrid, Scissors, Settings, UserRound, Users, Contact } from "lucide-react";
 import { useI18n } from "@/i18n/client";
 
 const items = [
   { href: "/dashboard", key: "overview", icon: LayoutGrid, managerOnly: false },
   { href: "/dashboard/appointments", key: "appointments", icon: CalendarDays, managerOnly: false },
   { href: "/dashboard/clients", key: "clients", icon: Contact, managerOnly: false },
+  { href: "/dashboard/voice", key: "voice", icon: AudioLines, managerOnly: false },
   { href: "/dashboard/services", key: "services", icon: Scissors, managerOnly: true },
   { href: "/dashboard/team", key: "team", icon: Users, managerOnly: true },
   { href: "/dashboard/settings", key: "settings", icon: Settings, managerOnly: true },

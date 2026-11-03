@@ -19,9 +19,11 @@ const azureVoice = (fallback: string) =>
 const serverSchema = z.object({
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(20),
-  TWILIO_ACCOUNT_SID: z.string().regex(/^AC[0-9a-f]{32}$/i, "must be a Twilio Account SID"),
-  TWILIO_AUTH_TOKEN: z.string().min(16),
-  TWILIO_WEBHOOK_BASE_URL: z.url(),
+  // Twilio (phone calls + SMS) is optional. Without it the web voice agent
+  // still works, phone webhooks answer 403 and SMS sends are skipped.
+  TWILIO_ACCOUNT_SID: optional.pipe(z.string().regex(/^AC[0-9a-f]{32}$/i, "must be a Twilio Account SID").optional()),
+  TWILIO_AUTH_TOKEN: optional.pipe(z.string().min(16).optional()),
+  TWILIO_WEBHOOK_BASE_URL: optional.pipe(z.url().optional()),
   CRON_SECRET: z.string().min(32, "use at least 32 random characters"),
   // Azure AI Speech (text-to-speech). Required for Georgian calls.
   AZURE_SPEECH_KEY: optional,

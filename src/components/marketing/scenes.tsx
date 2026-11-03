@@ -1,6 +1,6 @@
 import { Fragment } from "react";
 import type { Dictionary } from "@/i18n/dictionaries/en";
-import { PhoneIcon } from "./call-card";
+import { PhoneIcon } from "./phone-icon";
 
 export type SceneText = Dictionary["home"]["scenes"];
 
@@ -97,7 +97,7 @@ function SmsScene({ t }: { t: SceneText }) {
         <div className="notch" />
         <div className="phone-top r s1">
           <span className="av fill">B</span>
-          <b>BarberFlow</b>
+          <b>DevskStudio</b>
           <span>{t.smsTime}</span>
         </div>
         <div className="sms b-in r s2">{t.reminder}</div>

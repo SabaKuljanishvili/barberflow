@@ -18,6 +18,7 @@ import {
   parseIn,
   passwordChangeSchema,
   salonSettingsSchema,
+  salonSettingsUpdate,
   serviceSchema,
   statusSchema,
   toFormState,
@@ -290,21 +291,8 @@ export async function updateSalonSettings(_prev: FormState, formData: FormData):
       locale,
     );
     if (!parsed.success) return toFormState(parsed.error, t.validation);
-    const v = parsed.data;
     const supabase = await createSupabaseServerClient();
-    const { error } = await supabase
-      .from("salons")
-      .update({
-        name: v.name,
-        phone_number: v.phoneNumber ?? null,
-        timezone: v.timezone,
-        opens_at: v.opensAt,
-        closes_at: v.closesAt,
-        working_days: [...new Set(v.workingDays)].sort(),
-        voice_agent_enabled: v.voiceAgentEnabled === "on",
-        locale: v.locale,
-      })
-      .eq("id", salon.id);
+    const { error } = await supabase.from("salons").update(salonSettingsUpdate(parsed.data)).eq("id", salon.id);
     if (error?.code === "23505") return { ok: false, message: t.actions.phoneTaken };
     if (error) return dbError(t, error.code, t.actions.settingsFailed);
     revalidatePath("/dashboard", "layout");

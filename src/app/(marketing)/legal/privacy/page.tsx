@@ -24,7 +24,7 @@ function En({ company, email }: Props) {
   return (
     <LegalPage
       page="privacy"
-      intro={`This policy explains how ${company} ("we") handles personal data when barbershops ("shops") use BarberFlow and when their clients call or text a BarberFlow number.`}
+      intro={`This policy explains how ${company} ("we") handles personal data when barbershops ("shops") use DevskStudio and when their clients call or text a DevskStudio number.`}
     >
       <h2>1. Our role</h2>
       <p>
@@ -112,7 +112,7 @@ function Ka({ company, email }: Props) {
   return (
     <LegalPage
       page="privacy"
-      intro={`ეს პოლიტიკა განმარტავს, როგორ ამუშავებს ${company} („ჩვენ“) პერსონალურ მონაცემებს, როდესაც ბარბერშოპები („სალონები“) იყენებენ BarberFlow-ს და როდესაც მათი კლიენტები რეკავენ ან SMS-ს უგზავნიან BarberFlow-ის ნომერს.`}
+      intro={`ეს პოლიტიკა განმარტავს, როგორ ამუშავებს ${company} („ჩვენ“) პერსონალურ მონაცემებს, როდესაც ბარბერშოპები („სალონები“) იყენებენ DevskStudio-ს და როდესაც მათი კლიენტები რეკავენ ან SMS-ს უგზავნიან DevskStudio-ის ნომერს.`}
     >
       <h2>1. ჩვენი როლი</h2>
       <p>

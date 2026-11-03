@@ -1,7 +1,7 @@
 import "server-only";
 import { siteUrl } from "@/lib/env";
 import { businessDetails } from "@/lib/env.server";
-import { site } from "@/lib/site";
+import { BRAND_MARK_SRC, site } from "@/lib/site";
 
 /** Organization data. Contact fields appear only when real values are configured. */
 export function organizationSchema() {
@@ -11,7 +11,7 @@ export function organizationSchema() {
     "@type": "Organization",
     name: b.legalName ?? site.name,
     url: siteUrl(),
-    logo: `${siteUrl()}/icon.svg`,
+    logo: `${siteUrl()}${BRAND_MARK_SRC}`,
     ...(b.email && { email: b.email }),
     ...(b.phone && { telephone: b.phone }),
   };

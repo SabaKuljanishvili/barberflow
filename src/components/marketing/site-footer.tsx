@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ScissorsIcon } from "@/components/logo";
+import { BrandMark } from "@/components/logo";
 import { getI18n } from "@/i18n/server";
 import { legalPages, marketingNav, site } from "@/lib/site";
 import { businessDetails } from "@/lib/env.server";
@@ -13,9 +13,7 @@ export async function SiteFooter() {
       <div className="fgrid">
         <div>
           <div className="row fbrand">
-            <span className="brand-mark">
-              <ScissorsIcon size={15} />
-            </span>
+            <BrandMark size={30} />
             <span className="brand-name">{site.name}</span>
           </div>
           <p className="p fdesc">{t.footer.tagline}</p>

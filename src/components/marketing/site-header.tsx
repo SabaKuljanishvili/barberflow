@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ScissorsIcon } from "@/components/logo";
+import { BrandMark } from "@/components/logo";
 import { LocaleSwitcher } from "@/components/locale-switcher";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
 import { fmt } from "@/i18n/config";
@@ -16,9 +16,7 @@ export async function SiteHeader() {
   return (
     <header className="wrap bf-cb bf-header r">
       <Link href="/" className="brand" aria-label={fmt(t.meta.logoHome, { site: site.name })}>
-        <span className="brand-mark">
-          <ScissorsIcon />
-        </span>
+        <BrandMark />
         <span className="brand-name">{site.name}</span>
       </Link>
       <nav className="navlinks" aria-label={t.nav.main}>

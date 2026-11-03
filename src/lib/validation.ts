@@ -166,6 +166,23 @@ export const salonSettingsSchema = z
   })
   .refine((v) => v.closesAt > v.opensAt, { path: ["closesAt"], message: m("closesAfterOpens") });
 
+/**
+ * Row written to `salons` by the settings form. Every key must have a column
+ * UPDATE grant for `authenticated` in the migrations (salon-grants.test.ts).
+ */
+export function salonSettingsUpdate(v: z.output<typeof salonSettingsSchema>) {
+  return {
+    name: v.name,
+    phone_number: v.phoneNumber ?? null,
+    timezone: v.timezone,
+    opens_at: v.opensAt,
+    closes_at: v.closesAt,
+    working_days: [...new Set(v.workingDays)].sort(),
+    voice_agent_enabled: v.voiceAgentEnabled === "on",
+    locale: v.locale,
+  };
+}
+
 export const passwordChangeSchema = z
   .object({ password: passwordSchema, confirm: z.string() })
   .refine((v) => v.password === v.confirm, { path: ["confirm"], message: m("passwordsMatch") });

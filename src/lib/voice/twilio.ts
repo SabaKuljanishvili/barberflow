@@ -4,22 +4,39 @@ import { serverEnv } from "@/lib/env.server";
 
 export type TwilioParams = Record<string, string>;
 
+/** Twilio credentials, or null when phone calls and SMS are not set up. */
+export function twilioConfig() {
+  const env = serverEnv();
+  if (!env.TWILIO_ACCOUNT_SID || !env.TWILIO_AUTH_TOKEN || !env.TWILIO_WEBHOOK_BASE_URL) return null;
+  return { accountSid: env.TWILIO_ACCOUNT_SID, authToken: env.TWILIO_AUTH_TOKEN, baseUrl: env.TWILIO_WEBHOOK_BASE_URL };
+}
+
+function requireTwilio() {
+  const config = twilioConfig();
+  if (!config) throw new Error("Twilio is not configured (TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_WEBHOOK_BASE_URL)");
+  return config;
+}
+
 /**
  * Reads the form body and verifies X-Twilio-Signature against the public URL
  * Twilio called (which includes our signed query-string state). Returns null
- * when the request did not come from Twilio.
+ * when the request did not come from Twilio, or Twilio is not configured.
  */
 export async function verifyTwilioRequest(request: Request): Promise<{ params: TwilioParams; url: URL } | null> {
-  const env = serverEnv();
+  const config = twilioConfig();
   const incoming = new URL(request.url);
-  const publicUrl = new URL(incoming.pathname + incoming.search, env.TWILIO_WEBHOOK_BASE_URL);
+  if (!config) {
+    console.warn("twilio webhook rejected: Twilio is not configured", { path: incoming.pathname });
+    return null;
+  }
+  const publicUrl = new URL(incoming.pathname + incoming.search, config.baseUrl);
 
   const form = await request.formData();
   const params: TwilioParams = {};
   for (const [k, v] of form) if (typeof v === "string") params[k] = v;
 
   const signature = request.headers.get("x-twilio-signature") ?? "";
-  if (!signature || !twilio.validateRequest(env.TWILIO_AUTH_TOKEN, signature, publicUrl.toString(), params)) {
+  if (!signature || !twilio.validateRequest(config.authToken, signature, publicUrl.toString(), params)) {
     // The usual cause for real Twilio traffic is TWILIO_WEBHOOK_BASE_URL not
     // matching the URL configured in the Twilio console (scheme, host, port).
     console.warn("twilio signature rejected", {
@@ -34,12 +51,12 @@ export async function verifyTwilioRequest(request: Request): Promise<{ params: T
 }
 
 export function twilioClient() {
-  const env = serverEnv();
-  return twilio(env.TWILIO_ACCOUNT_SID, env.TWILIO_AUTH_TOKEN);
+  const config = requireTwilio();
+  return twilio(config.accountSid, config.authToken);
 }
 
 export function webhookUrl(path: string, query: Record<string, string | number | undefined> = {}): string {
-  const url = new URL(path, serverEnv().TWILIO_WEBHOOK_BASE_URL);
+  const url = new URL(path, requireTwilio().baseUrl);
   for (const [k, v] of Object.entries(query)) if (v !== undefined) url.searchParams.set(k, String(v));
   return url.toString();
 }

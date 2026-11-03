@@ -18,7 +18,7 @@ function En() {
   return (
     <LegalPage
       page="refund"
-      intro="This policy covers BarberFlow subscription fees. Telephony usage charged by the provider is not refundable by us."
+      intro="This policy covers DevskStudio subscription fees. Telephony usage charged by the provider is not refundable by us."
     >
       <h2>1. Cancelling</h2>
       <p>
@@ -55,7 +55,7 @@ function Ka() {
   return (
     <LegalPage
       page="refund"
-      intro="ეს პოლიტიკა ეხება BarberFlow-ის გამოწერის საფასურს. პროვაიდერის მიერ დარიცხულ სატელეფონო ხარჯს ჩვენ ვერ დავაბრუნებთ."
+      intro="ეს პოლიტიკა ეხება DevskStudio-ის გამოწერის საფასურს. პროვაიდერის მიერ დარიცხულ სატელეფონო ხარჯს ჩვენ ვერ დავაბრუნებთ."
     >
       <h2>1. გაუქმება</h2>
       <p>

@@ -1,6 +1,6 @@
-# BarberFlow
+# DevskStudio
 
-> BarberFlow is a web app for barbershops. It answers the shop's phone with an automated voice agent, books appointments into each barber's calendar without double-booking, and texts clients reminders 1 to 2 hours before their appointment.
+> DevskStudio is a web app for barbershops. It answers the shop's phone with an automated voice agent, books appointments into each barber's calendar without double-booking, and texts clients reminders 1 to 2 hours before their appointment.
 
 ## What it does
 

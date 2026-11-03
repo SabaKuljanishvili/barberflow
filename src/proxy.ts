@@ -121,6 +121,10 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
+    // English marketing pages exist only through the rewrite above, so their
+    // prefetch (RSC) requests must reach the proxy too, or they resolve to 404.
+    "/en",
+    "/en/:path*",
     {
       source: "/((?!_next/static|_next/image|favicon.ico|icon|apple-icon|brand/|opengraph-image|robots.txt|sitemap.xml|llms.txt).*)",
       missing: [

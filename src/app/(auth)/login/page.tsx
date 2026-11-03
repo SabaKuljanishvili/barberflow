@@ -19,6 +19,11 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
           {t.auth.login.confirmed}
         </p>
       )}
+      {error === "access" && (
+        <p role="alert" className="mt-4 rounded-2xl bg-danger-soft px-4 py-3 text-sm text-danger">
+          {t.auth.login.accessEnded}
+        </p>
+      )}
       {error === "link" && (
         <p role="alert" className="mt-4 rounded-2xl bg-danger-soft px-4 py-3 text-sm text-danger">
           {t.auth.login.badLink}

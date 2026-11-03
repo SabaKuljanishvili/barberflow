@@ -1,6 +1,6 @@
 import type { EmailOtpType } from "@supabase/supabase-js";
 import { NextResponse, type NextRequest } from "next/server";
-import { destinationFor } from "@/lib/safe-next";
+import { RESET_COOKIE, destinationFor, grantsPasswordReset } from "@/lib/safe-next";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 const TYPES: EmailOtpType[] = ["signup", "invite", "magiclink", "recovery", "email_change", "email"];
@@ -20,13 +20,26 @@ export async function GET(request: NextRequest) {
   if (code) {
     const supabase = await createSupabaseServerClient();
     const { error } = await supabase.auth.exchangeCodeForSession(code);
-    if (!error) return NextResponse.redirect(new URL(destinationFor(null, next), request.url));
+    if (!error) return land(request, null, next);
   }
 
   if (tokenHash && type && TYPES.includes(type)) {
     const supabase = await createSupabaseServerClient();
     const { error } = await supabase.auth.verifyOtp({ type, token_hash: tokenHash });
-    if (!error) return NextResponse.redirect(new URL(destinationFor(type, next), request.url));
+    if (!error) return land(request, type, next);
   }
   return NextResponse.redirect(new URL("/login?error=link", request.url));
+}
+
+/**
+ * Redirects to the link's destination. A recovery or invite link also gets a
+ * short-lived marker cookie: /reset-password requires it, so a session alone
+ * (stolen cookie, unlocked shared PC) can't set a new password there.
+ */
+function land(request: NextRequest, type: EmailOtpType | null, next: string | null) {
+  const res = NextResponse.redirect(new URL(destinationFor(type, next), request.url));
+  if (grantsPasswordReset(type, next)) {
+    res.cookies.set(RESET_COOKIE, "1", { httpOnly: true, sameSite: "lax", secure: process.env.NODE_ENV === "production", path: "/", maxAge: 15 * 60 });
+  }
+  return res;
 }

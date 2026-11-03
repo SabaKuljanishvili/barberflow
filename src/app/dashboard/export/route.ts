@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { getSession } from "@/lib/auth";
 import { toCsv } from "@/lib/csv";
+import { fetchAllPages } from "@/lib/paginate";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
@@ -17,19 +18,32 @@ export async function GET(request: NextRequest) {
 
   let csv: string;
   if (type === "clients") {
-    const { data, error } = await supabase.from("clients").select("first_name, last_name, phone_number, locale, notes, created_at").order("created_at").limit(50_000);
-    if (error) return new NextResponse("Export failed", { status: 500 });
+    let data;
+    try {
+      data = await fetchAllPages((from, to) =>
+        supabase.from("clients").select("first_name, last_name, phone_number, locale, notes, created_at").order("created_at").order("id").range(from, to),
+      );
+    } catch {
+      return new NextResponse("Export failed", { status: 500 });
+    }
     csv = toCsv(
       ["first_name", "last_name", "phone", "language", "notes", "created_at"],
       (data ?? []).map((c) => [c.first_name, c.last_name, c.phone_number, c.locale, c.notes, c.created_at]),
     );
   } else if (type === "appointments") {
-    const { data, error } = await supabase
-      .from("appointments")
-      .select("appointment_time, ends_at, status, source, clients(first_name, last_name, phone_number), services(name, price), profiles(full_name)")
-      .order("appointment_time")
-      .limit(50_000);
-    if (error) return new NextResponse("Export failed", { status: 500 });
+    let data;
+    try {
+      data = await fetchAllPages((from, to) =>
+        supabase
+          .from("appointments")
+          .select("appointment_time, ends_at, status, source, clients(first_name, last_name, phone_number), services(name, price), profiles(full_name)")
+          .order("appointment_time")
+          .order("id")
+          .range(from, to),
+      );
+    } catch {
+      return new NextResponse("Export failed", { status: 500 });
+    }
     csv = toCsv(
       ["start", "end", "status", "source", "client", "client_phone", "service", "price", "barber"],
       (data ?? []).map((a) => [

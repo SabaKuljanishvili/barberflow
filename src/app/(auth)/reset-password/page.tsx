@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { cookies } from "next/headers";
 import { getI18n } from "@/i18n/server";
+import { RESET_COOKIE } from "@/lib/safe-next";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { ResetForm } from "./reset-form";
 
@@ -16,12 +18,12 @@ export default async function ResetPasswordPage({ searchParams }: { searchParams
   const { t } = await getI18n();
   const supabase = await createSupabaseServerClient();
   const { data } = await supabase.auth.getClaims();
-  const signedIn = Boolean(data?.claims.sub);
+  const allowed = Boolean(data?.claims.sub) && (await cookies()).get(RESET_COOKIE)?.value === "1";
 
   return (
     <>
       <h1 className="text-2xl font-bold tracking-tight">{t.auth.reset.title}</h1>
-      {signedIn ? (
+      {allowed ? (
         <>
           <p className="mt-1 text-sm text-muted">{invite ? t.auth.reset.inviteIntro : t.auth.reset.intro}</p>
           <ResetForm />

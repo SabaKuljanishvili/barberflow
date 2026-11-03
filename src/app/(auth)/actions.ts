@@ -1,11 +1,11 @@
 "use server";
 
-import { headers } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { getI18n } from "@/i18n/server";
 import { siteUrl } from "@/lib/env";
 import { rateLimit } from "@/lib/rate-limit";
-import { safeNext } from "@/lib/safe-next";
+import { RESET_COOKIE, safeNext } from "@/lib/safe-next";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import {
   forgotPasswordSchema,
@@ -89,6 +89,9 @@ export async function resetPassword(_prev: FormState, formData: FormData): Promi
   const parsed = parseIn(passwordChangeSchema, Object.fromEntries(formData), locale);
   if (!parsed.success) return toFormState(parsed.error, t.validation);
 
+  // Only right after a recovery/invite link (marker set by /auth/confirm).
+  const jar = await cookies();
+  if (jar.get(RESET_COOKIE)?.value !== "1") return { ok: false, message: t.auth.reset.expired };
   const supabase = await createSupabaseServerClient();
   const { data } = await supabase.auth.getClaims();
   if (!data?.claims.sub) return { ok: false, message: t.auth.reset.expired };
@@ -99,5 +102,6 @@ export async function resetPassword(_prev: FormState, formData: FormData): Promi
     return { ok: false, message: t.auth.reset.failed };
   }
   await supabase.auth.signOut({ scope: "others" });
+  jar.delete(RESET_COOKIE);
   redirect("/dashboard");
 }

@@ -25,3 +25,13 @@ export function destinationFor(type: string | null, next: string | null): string
   if (type === "email_change") return "/dashboard/account?emailChanged=1";
   return safeNext(next);
 }
+
+/** Cookie set by /auth/confirm when a recovery or invite link was used; /reset-password requires it. */
+export const RESET_COOKIE = "bf_pw_reset";
+
+/** Whether this email link may unlock /reset-password (an ordinary session may not). */
+export function grantsPasswordReset(type: string | null, next: string | null): boolean {
+  if (type === "recovery" || type === "invite") return true;
+  const safe = next ? safeNext(next, "") : "";
+  return safe === "/reset-password" || safe.startsWith("/reset-password?");
+}

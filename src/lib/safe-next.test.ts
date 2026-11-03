@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { destinationFor, safeNext } from "./safe-next";
+import { destinationFor, grantsPasswordReset, safeNext } from "./safe-next";
 
 describe("safeNext", () => {
   it.each(["/dashboard", "/dashboard/appointments?day=2026-11-03", "/reset-password", "/dashboard#x"])("allows same-origin path %s", (v) => {
@@ -40,5 +40,17 @@ describe("destinationFor (email links)", () => {
     expect(destinationFor(null, "/reset-password")).toBe("/reset-password");
     expect(destinationFor(null, "//evil.com")).toBe("/dashboard");
     expect(destinationFor("signup", null)).toBe("/dashboard");
+  });
+});
+
+describe("grantsPasswordReset", () => {
+  it("only recovery/invite links (or the reset redirect) unlock /reset-password", () => {
+    expect(grantsPasswordReset("recovery", null)).toBe(true);
+    expect(grantsPasswordReset("invite", null)).toBe(true);
+    expect(grantsPasswordReset(null, "/reset-password")).toBe(true);
+    expect(grantsPasswordReset(null, "/reset-password?invite=1")).toBe(true);
+    expect(grantsPasswordReset("signup", null)).toBe(false);
+    expect(grantsPasswordReset(null, "/dashboard")).toBe(false);
+    expect(grantsPasswordReset(null, "//evil.com/reset-password")).toBe(false);
   });
 });

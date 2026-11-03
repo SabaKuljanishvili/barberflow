@@ -277,6 +277,7 @@ export const en = {
       intro: "Welcome back. Sign in to manage your shop.",
       confirmed: "Email confirmed. You can sign in now.",
       badLink: "That link is invalid or has expired. Sign in, or ask your manager for a new invite.",
+      accessEnded: "Your access to this salon has ended. Ask the salon manager if this is a mistake.",
       failed: "Email or password is incorrect, or the email is not confirmed yet.",
     },
     signup: {
@@ -612,7 +613,7 @@ export const en = {
       manage: "Manage",
       manageLabel: "Manage {name}",
       role: "Role",
-      active: "Active (inactive barbers keep their history but get no new bookings)",
+      active: "Active: can sign in and take bookings (history is kept when off)",
       takesClients: "Takes clients (appears in booking and the voice agent)",
       selfNote: "You can't change your own role or deactivate yourself.",
       save: "Save",

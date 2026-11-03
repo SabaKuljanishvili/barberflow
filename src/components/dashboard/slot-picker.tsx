@@ -35,6 +35,9 @@ export function SlotPicker({
   const [failed, setFailed] = useState(false);
   const [picked, setPicked] = useState(defaultTime);
   const [pending, start] = useTransition();
+  // Bumped when the form resets after a booking, so the times are fetched
+  // again even though service and barber did not change.
+  const [version, setVersion] = useState(0);
 
   // Follow the service and barber selects of the same form.
   useEffect(() => {
@@ -44,11 +47,19 @@ export function SlotPicker({
       const data = new FormData(form);
       setQuery({ serviceId: String(data.get("serviceId") ?? ""), staffId: String(data.get("staffId") ?? "") });
     };
+    const onReset = () =>
+      setTimeout(() => {
+        setPicked("");
+        setVersion((v) => v + 1);
+        read();
+      }, 0);
     read();
     form.addEventListener("change", read);
-    // A successful booking resets the form: refresh the free times.
-    form.addEventListener("reset", () => setTimeout(read, 0));
-    return () => form.removeEventListener("change", read);
+    form.addEventListener("reset", onReset);
+    return () => {
+      form.removeEventListener("change", read);
+      form.removeEventListener("reset", onReset);
+    };
   }, []);
 
   const serviceId = query?.serviceId ?? "";
@@ -66,7 +77,7 @@ export function SlotPicker({
     return () => {
       live = false;
     };
-  }, [serviceId, staffId, date]);
+  }, [serviceId, staffId, date, version]);
 
   const [hour, minute] = picked ? picked.split(":") : ["", ""];
   const describedBy = [hint ? `${name}-hint` : "", errs?.length ? `${name}-error` : ""].filter(Boolean).join(" ") || undefined;

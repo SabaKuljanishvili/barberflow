@@ -67,7 +67,8 @@ The tests went from 167 to 239, and all of them pass.
   - Partial: no drag reordering, no separate ka/en names, no per-barber assignment or price.
 - ⚠️ **3.6 Team.**
   - Done: change role, deactivate, "takes clients" toggle (inactive staff disappear from booking and the voice agent), pending-invite badge with resend.
-  - Partial: no per-barber working hours or vacations. Deactivated staff can still sign in.
+  - Deactivated or removed members lose all access: they are blocked in the app and in the database rules.
+  - Partial: no per-barber working hours or vacations.
 - ⚠️ **3.7 Settings.** Done: closed dates (holidays) respected everywhere booking happens, and a searchable timezone field with Tbilisi first. Partial: no per-weekday hours, breaks, booking rules, reminder timing or SMS templates.
 - ✅ **3.8 Data and billing.**
   - CSV export of clients and appointments, protected against spreadsheet formulas.
@@ -94,11 +95,36 @@ The tests went from 167 to 239, and all of them pass.
    - Add `RESEND_API_KEY`, `CONTACT_TO_EMAIL`, `CONTACT_FROM_EMAIL` (a sender on a domain verified in Resend).
    - Add `BUSINESS_LEGAL_NAME`, `BUSINESS_ID_CODE`, `BUSINESS_EMAIL`, `BUSINESS_PHONE` and the `BUSINESS_*` address fields.
 2. **Supabase.**
-   - Apply the migrations `20261103000000` … `20261103000800` with `supabase db push` or the SQL editor.
+   - Apply the migrations `20261103000000` … `20261103000900` with `supabase db push` or the SQL editor.
    - Auth → URL Configuration: set Site URL to the origin above, and add `<origin>/auth/confirm` and `<origin>/reset-password` to the redirect allow list.
-   - Email templates: invite and recovery links should point to `{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=invite` (or `type=recovery`).
+   - **Email templates (required):** invite and recovery links must point to `{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=invite` (or `type=recovery`).
+   - Why: with the default templates, a reset link only works in the same browser that asked for it (PKCE). Invite links from the admin API can't be read by the server at all.
 3. **Vercel region.** Confirm that the Supabase project is in the EU, so `fra1` is the right region.
 4. **Twilio console.** Paste the three webhook URLs from Settings → Voice agent.
 5. **Pricing.** Replace the placeholder prices and the Twilio estimate in `src/lib/pricing.ts`, then set `PRICING_IS_PLACEHOLDER = false`.
 6. **Audio sample.** Record one, save it as `public/audio/agent-sample-ka.mp3`, and set `AGENT_SAMPLE_AUDIO_SRC` in `src/lib/site.ts`.
 7. **Test with a real account.** Sign in to a manager account on `next dev` and walk through: voice page, booking, reschedule, client profile, settings save with a Twilio number, password reset email.
+
+## Final review (fresh reviewer) and fix pass
+
+The final review found no Critical issues and 7 Important ones. All 7 are fixed:
+
+1. `/reset-password` now needs a 15-minute marker cookie that only a recovery or invite link sets. A session alone can no longer change the password there.
+2. An inactive profile gets no access. `getSession` returns nothing, and the database helpers `current_salon_id()` and `is_manager()` require `active` (migration `000900`).
+3. A login whose profile is missing or inactive goes to `/auth/ended`, which signs it out. This ends the redirect loop.
+4. The proxy now also runs for `/en` prefetch requests. Checked: an RSC request for `/en/contact` returns English content.
+5. Supabase email templates are now marked required in the manual steps (cross-device reset links).
+6. After a booking, the free-time picker reloads and clears the chosen time.
+7. CSV export pages through all rows instead of stopping at Supabase's 1000-row cap.
+
+Deferred minor issues:
+- `createAppointment` can create a client before the barber check fails.
+- `createAppointment` doesn't check that the service is active.
+- `availableSlots` lists times for an explicitly chosen inactive barber.
+- `rescheduleAppointment` allows moving finished or cancelled visits.
+- `deleteSalon` deletes the archive before the salon row.
+- After a PKCE email change, `changeEmail` lands on `/dashboard`, not on the "email changed" message.
+- The closed-dates check accepts impossible dates like `2026-13-45`.
+- `azureConfig()` re-parses the environment on every call.
+- Preview deployments link to the production URL.
+- Rate limits are kept in memory, per server instance.

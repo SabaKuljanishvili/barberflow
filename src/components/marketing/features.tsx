@@ -99,7 +99,7 @@ export function Features({ home }: { home: Home }) {
   const total = home.features.length;
 
   return (
-    <section id="features" className="wrap bf-cb sec">
+    <section className="wrap bf-cb sec d-only">
       <div ref={splitRef} className="split">
         <div ref={stickRef} className="stick">
           <div ref={headRef} className="stick-head">

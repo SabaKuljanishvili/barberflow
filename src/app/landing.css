@@ -357,6 +357,10 @@ html:has(.bf) {
   height: 0;
   overflow: hidden;
 }
+/* Line break before the green phrase: phones only (see the mobile block). */
+.bf .headline .hl-br {
+  display: none;
+}
 .bf .headline .w {
   display: inline-block;
   white-space: nowrap;
@@ -1488,5 +1492,400 @@ html:has(.bf) {
 @media (max-width: 420px) {
   .bf .hright .bf-btn-sm {
     display: none;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+ * Phones (< 768px), per the "DevskStudio — მობილური" design canvas.
+ * Layout only: copy, prices and colours are the desktop ones. Everything
+ * below is inside max-width: 767px, so desktop is unchanged; the .m-only
+ * blocks (carousel, plan picker, hero chips, footer settings) never render
+ * at 768px and up, and .d-only blocks never render below it.
+ * ------------------------------------------------------------------------- */
+@media (min-width: 768px) {
+  .bf .m-only {
+    display: none !important;
+  }
+}
+
+@media (max-width: 767px) {
+  .bf .d-only {
+    display: none !important;
+  }
+  html:has(.bf) {
+    scroll-padding-top: 72px;
+  }
+
+  /* 1. Header: 60px, logo + small "Get started" pill + 44px menu button. */
+  .bf .bf-header {
+    height: 60px;
+    gap: 10px;
+  }
+  .bf .brand {
+    min-height: 44px;
+  }
+  .bf .brand-name {
+    font-size: 17px;
+  }
+  /* .bf-cb is content-box: full-width buttons and cards must include padding. */
+  .bf .ctas .bf-btn,
+  .bf .closer .bf-btn,
+  .bf .plan .bf-btn,
+  .bf .menu-ctas .bf-btn,
+  .bf .fc-card {
+    box-sizing: border-box;
+  }
+  .bf .hright {
+    gap: 8px;
+  }
+  .bf .hright .bf-btn-sm {
+    display: inline-flex;
+    min-height: 44px;
+    padding: 0 14px;
+    font-size: 13px;
+  }
+  .bf .menu-btn {
+    display: inline-flex;
+  }
+  /* Full-screen menu: big links, settings row, buttons at the bottom. */
+  .bf .menu-sheet {
+    width: 100vw;
+    max-width: 100vw;
+    height: 100dvh;
+    margin: 0;
+    border-left: 0;
+  }
+  .bf .menu-inner {
+    box-sizing: border-box;
+    height: 100dvh;
+    padding-top: 8px;
+    padding-bottom: max(24px, env(safe-area-inset-bottom));
+  }
+  .bf .menu-top {
+    height: 52px;
+  }
+  .bf .menu-links a {
+    font-size: 24px;
+    line-height: 1.25;
+    font-family: var(--serif);
+    padding: 14px 4px;
+    min-height: 56px;
+  }
+  .bf .menu-tools form button,
+  .bf .fset form button {
+    min-height: 44px;
+    min-width: 52px;
+  }
+  .bf .menu-ctas {
+    margin-top: auto;
+  }
+  .bf .menu-ctas .bf-btn {
+    min-height: 54px;
+  }
+
+  /* 2. Hero */
+  .bf .hero-sec {
+    padding-top: 28px;
+    padding-bottom: 64px;
+  }
+  .bf .headline {
+    font-size: 52px;
+    line-height: 1.08;
+    margin-top: 16px;
+  }
+  /* Each part of the headline on its own line. */
+  .bf .headline .hl-br {
+    display: inline;
+  }
+  .bf .lede {
+    font-size: 15px;
+    color: var(--muted);
+    margin: 18px 0 24px;
+  }
+  .bf .ctas {
+    flex-direction: column;
+    gap: 10px;
+  }
+  .bf .ctas .bf-btn {
+    width: 100%;
+    min-height: 54px;
+  }
+  .bf .hero-chips {
+    list-style: none;
+    margin: 18px 0 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .bf .hero-chips li {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--muted);
+    padding: 6px 12px;
+    border-radius: 999px;
+    border: 1px solid var(--line2);
+    background: color-mix(in srgb, var(--surface) 70%, transparent);
+  }
+
+  /* 3. Features carousel (features-carousel.tsx) */
+  .bf .fcar .sec-head {
+    margin-bottom: 24px;
+  }
+  .bf .sec-head .p {
+    margin-top: 10px;
+  }
+  .bf .fc-track {
+    display: flex;
+    gap: 14px;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scroll-padding-inline: var(--gutter);
+    /* Bleed to the screen edges so the next card peeks in. */
+    margin-inline: calc(-1 * var(--gutter));
+    padding: 4px var(--gutter) 8px;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+  }
+  .bf .fc-track::-webkit-scrollbar {
+    display: none;
+  }
+  .bf .fc-card {
+    flex: 0 0 min(300px, calc(100vw - 2 * var(--gutter) - 32px));
+    scroll-snap-align: start;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 16px;
+    border-radius: 20px;
+  }
+  .bf .fc-stage {
+    height: 280px;
+    padding: 14px;
+  }
+  .bf .fc-card .it {
+    font-size: 19px;
+    margin: 4px 0 0;
+  }
+  .bf .fc-card .id {
+    font-size: 15px;
+  }
+  /* Card 01: the agent bubble wraps instead of being cut off. */
+  .bf .fc-card .sc-bubble {
+    max-width: 100%;
+  }
+  .bf .fc-card .tx {
+    white-space: normal;
+    clip-path: none;
+    animation: none;
+  }
+  .bf .fc-card .sc-call .wave {
+    margin: 16px 0 10px;
+  }
+  .bf .fc-nav {
+    margin-top: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  .bf .fc-arrow {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    border: 1px solid var(--line2);
+    background: var(--surface);
+    color: var(--ink);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+  }
+  .bf .fc-arrow:disabled {
+    opacity: 0.4;
+    cursor: default;
+  }
+  .bf .fc-dots {
+    display: flex;
+  }
+  /* Position indicator only; the arrows and swipe do the navigating. */
+  .bf .fc-dots {
+    gap: 6px;
+  }
+  .bf .fc-dot {
+    display: inline-flex;
+    align-items: center;
+  }
+  .bf .fc-dot i {
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    background: var(--line);
+    transition:
+      width 0.25s,
+      background 0.25s;
+  }
+  .bf .fc-dot[aria-current="true"] i {
+    width: 20px;
+    background: var(--green-ink);
+  }
+
+  /* 4. Steps: vertical timeline, numbered circles joined by a line. */
+  .bf .sec {
+    padding-bottom: 72px;
+  }
+  .bf .steps {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+  }
+  .bf .steps > li:not(.track) {
+    position: relative;
+    padding: 0 0 32px 64px;
+    min-height: 76px;
+  }
+  .bf .steps > li:not(.track) .dot {
+    position: absolute;
+    left: 0;
+    top: 0;
+  }
+  .bf .steps > li:not(.track)::before {
+    content: "";
+    position: absolute;
+    left: 21px;
+    top: 44px;
+    bottom: 0;
+    width: 2px;
+    background: var(--line2);
+  }
+  .bf .steps > li:last-child::before {
+    content: none;
+  }
+  .bf .steps .st {
+    font-size: 18px;
+    margin: 8px 0 6px;
+  }
+
+  /* 5. Transcript as chat bubbles: agent left, client right. */
+  .bf .sample {
+    padding: 16px;
+  }
+  .bf .sample-lines {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .bf .sample-lines > div {
+    display: flex;
+    flex-direction: column;
+    max-width: 85%;
+    align-self: flex-start;
+  }
+  .bf .sample-lines > div[data-who="caller"] {
+    align-self: flex-end;
+    align-items: flex-end;
+  }
+  .bf .sample-lines dt {
+    font-size: 11px;
+    margin: 0 6px 3px;
+  }
+  .bf .sample-lines dd {
+    margin: 0;
+    padding: 10px 14px;
+    border-radius: 18px 18px 18px 6px;
+    background: var(--bg);
+    border: 1px solid var(--line2);
+  }
+  .bf .sample-lines > div[data-who="caller"] dd {
+    border-radius: 18px 18px 6px 18px;
+    background: var(--green);
+    border-color: var(--green);
+    color: var(--on-green);
+  }
+
+  /* 6. Pricing: segmented control, one plan at a time. */
+  .bf .seg {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 4px;
+    padding: 4px;
+    margin-bottom: 16px;
+    border-radius: 999px;
+    border: 1px solid var(--line2);
+    background: var(--surface);
+  }
+  .bf .seg button {
+    min-height: 44px;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--muted);
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .bf .seg button[aria-checked="true"] {
+    background: var(--green);
+    color: var(--on-green);
+  }
+  .bf .plan-switch[data-active="solo"] .plans > li:not([data-plan="solo"]),
+  .bf .plan-switch[data-active="studio"] .plans > li:not([data-plan="studio"]),
+  .bf .plan-switch[data-active="pro"] .plans > li:not([data-plan="pro"]) {
+    display: none;
+  }
+  .bf .plan {
+    padding: 22px;
+  }
+  .bf .plan .bf-btn {
+    min-height: 54px;
+    white-space: normal;
+    text-align: center;
+  }
+  .bf .plan-notes {
+    margin-top: 16px;
+    padding: 14px 16px;
+    border-radius: 16px;
+    border: 1px solid var(--line2);
+    background: var(--surface);
+    font-size: 13.5px;
+  }
+
+  /* 7. FAQ: tall rows, one open at a time (faq-accordion.tsx). */
+  .bf .faq {
+    margin-top: 64px;
+  }
+  .bf .faq-item summary {
+    min-height: 56px;
+    align-items: center;
+    padding: 14px 0;
+    font-size: 16px;
+  }
+
+  /* Closing CTA */
+  .bf .closer .bf-btn {
+    width: 100%;
+    min-height: 54px;
+  }
+
+  /* 8. Footer: links in two columns, settings row, copyright. */
+  .bf .fgrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 28px 16px;
+    padding-top: 40px;
+    padding-bottom: 24px;
+  }
+  .bf .fgrid > :first-child {
+    grid-column: 1 / -1;
+  }
+  .bf .fl {
+    display: flex;
+    align-items: center;
+    min-height: 44px;
+    padding: 0;
+  }
+  .bf .fset {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 0 0 20px;
   }
 }

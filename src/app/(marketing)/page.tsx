@@ -11,6 +11,7 @@ import { localBusinessSchema, organizationSchema, softwareSchema } from "@/lib/s
 import { site } from "@/lib/site";
 import { AgentSample } from "@/components/marketing/agent-sample";
 import { Faq } from "@/components/marketing/faq";
+import { FeaturesCarousel } from "@/components/marketing/features-carousel";
 import { PricingPlans } from "@/components/marketing/pricing-plans";
 import { getI18n, pageAlternates } from "@/i18n/server";
 
@@ -63,6 +64,11 @@ export default async function HomePage() {
                   {h.ctaSecondary}
                 </Link>
               </div>
+              <ul className="hero-chips m-only">
+                {h.chips.map((c) => (
+                  <li key={c}>{c}</li>
+                ))}
+              </ul>
             </div>
           </div>
           {/* "Today" for the booking dates, in the shop's time zone. */}
@@ -70,7 +76,11 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <Features home={h} />
+      {/* One anchor for both layouts: desktop showcase, phone carousel. */}
+      <div id="features">
+        <Features home={h} />
+        <FeaturesCarousel home={h} />
+      </div>
 
       <section aria-labelledby="how" className="wrap bf-cb sec">
         <div className="sec-head sr">

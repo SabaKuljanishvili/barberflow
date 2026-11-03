@@ -1,5 +1,7 @@
 import Link from "@/components/locale-link";
 import { BrandMark } from "@/components/logo";
+import { LocaleSwitcher } from "@/components/locale-switcher";
+import { ThemeToggle } from "@/components/theme/theme-toggle";
 import { getI18n } from "@/i18n/server";
 import { legalPages, marketingNav, site } from "@/lib/site";
 import { businessDetails } from "@/lib/env.server";
@@ -34,6 +36,10 @@ export async function SiteFooter() {
             </Link>
           ))}
         </nav>
+      </div>
+      <div className="fset m-only">
+        <LocaleSwitcher />
+        <ThemeToggle />
       </div>
       <p className="fcopy">
         © {year} {biz.legalName ?? site.name}. {t.footer.rights}

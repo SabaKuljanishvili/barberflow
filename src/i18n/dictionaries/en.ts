@@ -124,6 +124,13 @@ export const en = {
       ],
       archive: "Archive · every night",
     },
+    chips: ["24/7", "Georgian · English", "No double bookings"],
+    carousel: {
+      label: "Features",
+      prev: "Previous feature",
+      next: "Next feature",
+      slide: "{n} of {total}",
+    },
     stepsEyebrow: "How it starts",
     stepsTitle: "Three steps to your first call.",
     steps: [
@@ -167,6 +174,7 @@ export const en = {
     heading: "Simple monthly plans",
     intro: "One price per shop, no setup fee. Cancel any time from your dashboard.",
     perMonth: "/ month",
+    picker: "Choose a plan",
     upTo: "Up to {n} barbers",
     oneBarber: "1 barber",
     popular: "Most popular",

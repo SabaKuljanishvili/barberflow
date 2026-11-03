@@ -23,7 +23,7 @@ export async function AgentSample() {
         </h3>
         <dl className="sample-lines" aria-labelledby="sample-transcript">
           {s.lines.map((line, i) => (
-            <div key={i}>
+            <div key={i} data-who={line.who}>
               <dt>{line.who === "agent" ? s.agent : s.caller}</dt>
               <dd>{line.text}</dd>
             </div>

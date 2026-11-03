@@ -73,11 +73,11 @@ export function MobileMenu({
           </nav>
           <div className="menu-tools">{children}</div>
           <div className="menu-ctas">
-            <Link className="bf-btn bf-btn-g" href="/login">
-              {labels.signIn}
-            </Link>
             <Link className="bf-btn bf-btn-p" href="/signup">
               {labels.start}
+            </Link>
+            <Link className="bf-btn bf-btn-g" href="/login">
+              {labels.signIn}
             </Link>
           </div>
         </div>

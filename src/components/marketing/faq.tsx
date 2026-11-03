@@ -1,5 +1,6 @@
 import { JsonLd } from "@/components/json-ld";
 import { getI18n } from "@/i18n/server";
+import { FaqAccordion } from "./faq-accordion";
 
 /** FAQ as native <details> (works without JS, keyboard friendly) plus FAQPage structured data. */
 export async function Faq() {
@@ -20,14 +21,14 @@ export async function Faq() {
           {f.title}
         </h2>
       </div>
-      <div className="faq-list">
+      <FaqAccordion>
         {f.items.map((i) => (
           <details key={i.q} className="faq-item">
             <summary>{i.q}</summary>
             <p className="p">{i.a}</p>
           </details>
         ))}
-      </div>
+      </FaqAccordion>
     </section>
   );
 }

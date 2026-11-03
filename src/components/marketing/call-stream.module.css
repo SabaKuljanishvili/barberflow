@@ -336,3 +336,19 @@
     stroke-dashoffset: 0;
   }
 }
+
+/* Phones (< 768px): three bookings and the two counters side by side. */
+@media (max-width: 767px) {
+  .list {
+    height: 190px;
+  }
+  .cnts {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: 100%;
+  }
+  .cnt {
+    text-align: center;
+    padding: 6px 10px;
+  }
+}

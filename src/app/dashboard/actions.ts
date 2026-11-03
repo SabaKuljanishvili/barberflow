@@ -7,12 +7,14 @@ import { fmt, type Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/dictionaries/en";
 import { getI18n } from "@/i18n/server";
 import { getSession, type SessionContext } from "@/lib/auth";
-import { siteUrl } from "@/lib/env";
+import { appUrl } from "@/lib/env";
 import { rateLimit } from "@/lib/rate-limit";
 import { createSupabaseAdminClient, createSupabaseServerClient, verifyPassword } from "@/lib/supabase/server";
 import { freeBarbersFor } from "@/lib/booking";
 import { lookupTwilioNumber } from "@/lib/voice/twilio-numbers";
 import { dayAvailability, salonHours } from "@/lib/availability";
+import { canReschedule, isBookableBarber, isBookableService } from "@/lib/booking-rules";
+import { isIsoDate } from "@/lib/calendar";
 import { parseLocalDateTime, workingHoursProblem, zonedDayBounds, zonedToUtc } from "@/lib/time";
 import {
   accountPasswordSchema,
@@ -223,11 +225,13 @@ export async function createAppointment(_prev: FormState, formData: FormData): P
     const supabase = await createSupabaseServerClient();
     const { data: service } = await supabase
       .from("services")
-      .select("duration_minutes")
+      .select("duration_minutes, active")
       .eq("id", parsed.data.serviceId)
       .eq("salon_id", salon.id)
       .maybeSingle();
     if (!service) return { ok: false, message: t.actions.invalidService };
+    // A stale form or crafted request must not book a hidden service.
+    if (!isBookableService(service)) return { ok: false, message: t.actions.serviceHidden };
     const hours = salonHours(salon);
     const problem = workingHoursProblem(start, service.duration_minutes, salon.timezone, hours);
     if (problem === "closedDay") return { ok: false, message: t.actions.closedDay };
@@ -258,7 +262,7 @@ export async function createAppointment(_prev: FormState, formData: FormData): P
 
     if (staffId) {
       const { data: barber } = await supabase.from("profiles").select("active, takes_clients").eq("id", staffId).eq("salon_id", salon.id).maybeSingle();
-      if (!barber?.active || !barber.takes_clients) return { ok: false, message: t.actions.barberUnavailable };
+      if (!isBookableBarber(barber)) return { ok: false, message: t.actions.barberUnavailable };
     }
     const end = new Date(start.getTime() + service.duration_minutes * 60_000);
     const candidates = staffId ? [staffId] : await freeBarbers(supabase, salon, start, end);
@@ -294,7 +298,7 @@ export async function availableSlots(input: { serviceId: string; staffId: string
   if (!session) return null;
   const { salon, userId, isManager } = session;
   const serviceId = z.uuid().safeParse(input.serviceId);
-  const date = z.string().regex(/^\d{4}-\d{2}-\d{2}$/).safeParse(input.date);
+  const date = z.string().refine(isIsoDate).safeParse(input.date);
   const staffId = input.staffId ? z.uuid().safeParse(input.staffId) : null;
   if (!serviceId.success || !date.success || (staffId && !staffId.success)) return null;
   const wanted = staffId?.data ?? (isManager ? null : userId);
@@ -305,8 +309,12 @@ export async function availableSlots(input: { serviceId: string; staffId: string
   const dayStart = zonedToUtc(y, m, d, 0, 0, salon.timezone);
   const dayEnd = zonedToUtc(y, m, d + 1, 0, 0, salon.timezone);
   const [service, staff, appts] = await Promise.all([
-    supabase.from("services").select("duration_minutes").eq("id", serviceId.data).eq("salon_id", salon.id).maybeSingle(),
-    wanted ? Promise.resolve({ data: [{ id: wanted }] }) : supabase.from("profiles").select("id").eq("salon_id", salon.id).eq("active", true).eq("takes_clients", true),
+    supabase.from("services").select("duration_minutes, active").eq("id", serviceId.data).eq("salon_id", salon.id).maybeSingle(),
+    // An explicitly chosen barber is checked like everyone else: inactive or
+    // not taking clients means no slots, even when picked by id.
+    wanted
+      ? supabase.from("profiles").select("id, active, takes_clients").eq("salon_id", salon.id).eq("id", wanted)
+      : supabase.from("profiles").select("id, active, takes_clients").eq("salon_id", salon.id),
     supabase
       .from("appointments")
       .select("staff_id, appointment_time, ends_at")
@@ -316,6 +324,8 @@ export async function availableSlots(input: { serviceId: string; staffId: string
       .lt("appointment_time", dayEnd.toISOString()),
   ]);
   if (!service.data) return null;
+  if (!isBookableService(service.data)) return [];
+  const barbers = (staff.data ?? []).filter(isBookableBarber);
   const busy = appts.data ?? [];
   return dayAvailability({
     date: date.data,
@@ -323,7 +333,7 @@ export async function availableSlots(input: { serviceId: string; staffId: string
     hours: salonHours(salon),
     durationMinutes: service.data.duration_minutes,
     now: new Date(),
-    barbers: (staff.data ?? []).map((b) => ({
+    barbers: barbers.map((b) => ({
       id: b.id,
       busy: busy.filter((a) => a.staff_id === b.id).map((a) => ({ start: new Date(a.appointment_time), end: new Date(a.ends_at) })),
     })),
@@ -378,11 +388,12 @@ export async function rescheduleAppointment(_prev: FormState, formData: FormData
     const supabase = await createSupabaseServerClient();
     const { data: appt } = await supabase
       .from("appointments")
-      .select("id, services(duration_minutes)")
+      .select("id, status, services(duration_minutes)")
       .eq("id", id.data)
       .eq("salon_id", salon.id)
       .maybeSingle();
     if (!appt?.services) return { ok: false, message: t.actions.forbidden };
+    if (!canReschedule(appt.status)) return { ok: false, message: t.actions.cannotReschedule };
     const hours = salonHours(salon);
     const problem = workingHoursProblem(start, appt.services.duration_minutes, salon.timezone, hours);
     if (problem === "closedDay") return { ok: false, message: t.actions.closedDay };
@@ -394,9 +405,11 @@ export async function rescheduleAppointment(_prev: FormState, formData: FormData
       .update({ appointment_time: start.toISOString(), reminder_sent_at: null })
       .eq("id", id.data)
       .eq("salon_id", salon.id)
+      // Same rule in the write itself, in case the status changed meanwhile.
+      .in("status", ["pending", "confirmed"])
       .select("id");
     if (error) return dbError(t, error.code, t.actions.updateFailed);
-    if (!data?.length) return { ok: false, message: t.actions.forbidden };
+    if (!data?.length) return { ok: false, message: t.actions.cannotReschedule };
     revalidatePath("/dashboard", "layout");
     return { ok: true, message: t.actions.rescheduled };
   });
@@ -412,7 +425,7 @@ export async function inviteBarber(_prev: FormState, formData: FormData): Promis
     const admin = createSupabaseAdminClient();
     const { data, error } = await admin.auth.admin.inviteUserByEmail(parsed.data.email, {
       // Invite links open the set-password form (see /auth/confirm).
-      redirectTo: `${siteUrl()}/auth/confirm?next=${encodeURIComponent("/reset-password?invite=1")}`,
+      redirectTo: `${appUrl()}/auth/confirm?next=${encodeURIComponent("/reset-password?invite=1")}`,
       data: { full_name: parsed.data.fullName },
     });
     if (error || !data.user) {
@@ -472,7 +485,7 @@ export async function resendInvite(_prev: FormState, formData: FormData): Promis
     const { data: member } = await admin.from("profiles").select("email, full_name").eq("id", id.data).eq("salon_id", salon.id).maybeSingle();
     if (!member) return { ok: false, message: t.actions.forbidden };
     const { error } = await admin.auth.admin.inviteUserByEmail(member.email, {
-      redirectTo: `${siteUrl()}/auth/confirm?next=${encodeURIComponent("/reset-password?invite=1")}`,
+      redirectTo: `${appUrl()}/auth/confirm?next=${encodeURIComponent("/reset-password?invite=1")}`,
       data: { full_name: member.full_name },
     });
     if (error) {
@@ -592,7 +605,7 @@ export async function changeEmail(_prev: FormState, formData: FormData): Promise
     const email = parsed.data.email.toLowerCase();
     if (email === profile.email.toLowerCase()) return { ok: false, message: t.actions.emailUnchanged };
     const supabase = await createSupabaseServerClient();
-    const { error } = await supabase.auth.updateUser({ email }, { emailRedirectTo: `${siteUrl()}/auth/confirm` });
+    const { error } = await supabase.auth.updateUser({ email }, { emailRedirectTo: `${appUrl()}/auth/confirm` });
     if (error) {
       console.error("email change failed", error.code);
       return { ok: false, message: t.actions.emailChangeFailed };

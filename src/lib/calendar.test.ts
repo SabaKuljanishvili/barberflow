@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { blockPosition, dayRows, shiftDate, weekDates } from "./calendar";
+import { blockPosition, dayRows, isIsoDate, shiftDate, weekDates } from "./calendar";
 
 describe("calendar helpers", () => {
   it("shifts ISO dates across month ends", () => {
@@ -20,5 +20,13 @@ describe("calendar helpers", () => {
     const close = new Date("2026-11-04T07:00:00Z");
     expect(blockPosition(new Date("2026-11-04T05:30:00Z"), new Date("2026-11-04T06:30:00Z"), open, close)).toEqual({ top: 25, height: 50 });
     expect(blockPosition(new Date("2026-11-04T04:00:00Z"), new Date("2026-11-04T05:30:00Z"), open, close)).toEqual({ top: 0, height: 25 });
+  });
+});
+
+describe("isIsoDate (strict)", () => {
+  it("accepts real calendar dates only", () => {
+    expect(isIsoDate("2026-11-04")).toBe(true);
+    expect(isIsoDate("2028-02-29")).toBe(true);
+    for (const bad of ["2026-13-45", "2026-02-30", "2027-02-29", "2026-04-31", "2026-00-10", "2026-1-5", "", null]) expect(isIsoDate(bad), String(bad)).toBe(false);
   });
 });

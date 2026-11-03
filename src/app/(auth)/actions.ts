@@ -3,7 +3,7 @@
 import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { getI18n } from "@/i18n/server";
-import { siteUrl } from "@/lib/env";
+import { appUrl } from "@/lib/env";
 import { rateLimit } from "@/lib/rate-limit";
 import { RESET_COOKIE, safeNext } from "@/lib/safe-next";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -46,7 +46,7 @@ export async function signup(_prev: FormState, formData: FormData): Promise<Form
     email,
     password,
     options: {
-      emailRedirectTo: `${siteUrl()}/auth/confirm`,
+      emailRedirectTo: `${appUrl()}/auth/confirm`,
       // The signup trigger copies locale onto the new salon (agent + SMS language).
       data: { full_name: fullName, salon_name: salonName, locale, terms_accepted_at: new Date().toISOString() },
     },
@@ -76,7 +76,7 @@ export async function requestPasswordReset(_prev: FormState, formData: FormData)
 
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: `${siteUrl()}/auth/confirm?next=/reset-password`,
+    redirectTo: `${appUrl()}/auth/confirm?next=/reset-password`,
   });
   // Log the code only; the user still sees the neutral message.
   if (error) console.error("password reset email failed", error.code);

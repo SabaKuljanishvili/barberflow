@@ -710,6 +710,8 @@ export const en = {
     overlap: "That barber is already booked at that time.",
     noBarberFree: "No barber is free at that time. Pick another time or a specific barber.",
     inUse: "That item is still in use and can't be removed.",
+    serviceHidden: "That service is hidden and can't be booked. Choose another one.",
+    cannotReschedule: "Only pending or confirmed appointments can be moved.",
     barberUnavailable: "That barber isn't taking bookings. Choose another one.",
     memberSaved: "Team member saved.",
     salonNameMismatch: "Type the salon name exactly as shown.",

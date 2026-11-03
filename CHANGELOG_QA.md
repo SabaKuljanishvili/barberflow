@@ -97,6 +97,7 @@ The tests went from 167 to 239, and all of them pass.
 2. **Supabase.**
    - Apply the migrations `20261103000000` … `20261103000900` with `supabase db push` or the SQL editor.
    - Auth → URL Configuration: set Site URL to the origin above, and add `<origin>/auth/confirm` and `<origin>/reset-password` to the redirect allow list.
+   - For preview deployments, also allow `https://*-<your-team>.vercel.app/**`. Auth emails sent from a preview now link back to that preview, and Supabase rejects redirects it doesn't allow.
    - **Email templates (required):** invite and recovery links must point to `{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=invite` (or `type=recovery`).
    - Why: with the default templates, a reset link only works in the same browser that asked for it (PKCE). Invite links from the admin API can't be read by the server at all.
 3. **Vercel region.** Confirm that the Supabase project is in the EU, so `fra1` is the right region.
@@ -119,12 +120,16 @@ The final review found no Critical issues and 7 Important ones. All 7 are fixed:
 
 Deferred minor issues:
 - `createAppointment` can create a client before the barber check fails.
-- `createAppointment` doesn't check that the service is active.
-- `availableSlots` lists times for an explicitly chosen inactive barber.
-- `rescheduleAppointment` allows moving finished or cancelled visits.
 - `deleteSalon` deletes the archive before the salon row.
 - After a PKCE email change, `changeEmail` lands on `/dashboard`, not on the "email changed" message.
-- The closed-dates check accepts impossible dates like `2026-13-45`.
 - `azureConfig()` re-parses the environment on every call.
-- Preview deployments link to the production URL.
 - Rate limits are kept in memory, per server instance.
+
+## Follow-up (2026-11-04): deferred items fixed
+
+Each fix has a test:
+- **Hidden services can't be booked.** `createAppointment` refuses them on the server, and `availableSlots` returns no times for them. Test: `isBookableService`.
+- **Inactive barbers get no times,** even when chosen explicitly. `availableSlots` checks the chosen barber like everyone else. Test: `isBookableBarber`.
+- **Only pending or confirmed visits can be rescheduled.** The rule is checked before the update and again inside it, in case the status changes meanwhile. Test: `canReschedule`.
+- **Closed dates must be real dates.** `2026-13-45` and `2026-02-30` are rejected. Tests: `isIsoDate` and the settings schema.
+- **Preview deployments link to themselves.** Sign-up, invite, password-reset and email-change links use `appUrl()`: on a Vercel preview that is the branch URL, otherwise the site URL. SEO URLs (canonical, sitemap) still point to production. Test: `resolveAppUrl`.

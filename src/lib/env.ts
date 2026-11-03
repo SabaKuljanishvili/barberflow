@@ -51,12 +51,39 @@ export function resolveSiteUrl(env: Record<string, string | undefined>): string 
   );
 }
 
-/** Single source for every absolute URL: metadataBase, sitemap, robots, JSON-LD, email links, webhooks. */
+/**
+ * Public site origin for SEO and shared links: metadataBase, sitemap,
+ * robots, JSON-LD. Previews keep pointing these at production on purpose.
+ */
 export function siteUrl(): string {
   return resolveSiteUrl({
     NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL,
     VERCEL_PROJECT_PRODUCTION_URL: process.env.VERCEL_PROJECT_PRODUCTION_URL,
     VERCEL_URL: process.env.VERCEL_URL,
+  });
+}
+
+/**
+ * Origin of the deployment serving this request, for links that must come
+ * back to it: signup confirmation, invites, password reset, email change.
+ * On a Vercel preview that is the preview (stable branch URL first), so
+ * testing a preview never sends people to production. Elsewhere: siteUrl.
+ */
+export function resolveAppUrl(env: Record<string, string | undefined>): string {
+  if (env.VERCEL_ENV === "preview") {
+    const preview = originOf(env.VERCEL_BRANCH_URL, "https://") ?? originOf(env.VERCEL_URL, "https://");
+    if (preview) return preview;
+  }
+  return resolveSiteUrl(env);
+}
+
+export function appUrl(): string {
+  return resolveAppUrl({
+    VERCEL_ENV: process.env.VERCEL_ENV,
+    VERCEL_BRANCH_URL: process.env.VERCEL_BRANCH_URL,
+    VERCEL_URL: process.env.VERCEL_URL,
+    NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL,
+    VERCEL_PROJECT_PRODUCTION_URL: process.env.VERCEL_PROJECT_PRODUCTION_URL,
   });
 }
 

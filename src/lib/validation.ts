@@ -1,6 +1,7 @@
 import { z } from "zod";
 import type { Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/dictionaries/en";
+import { isIsoDate } from "./calendar";
 import { phoneCountry } from "./phone-countries";
 
 // Custom messages are keys of Dictionary["validation"]; toFormState translates
@@ -169,7 +170,8 @@ export const salonSettingsSchema = z
       .array(z.string())
       .optional()
       .transform((list) => (list ?? []).filter((d) => d.trim() !== ""))
-      .pipe(z.array(z.string().regex(/^\d{4}-\d{2}-\d{2}$/, m("dateTime"))).max(100)),
+      // Real calendar dates only: "2026-02-30" would fail the date[] cast later.
+      .pipe(z.array(z.string().refine(isIsoDate, m("dateTime"))).max(100)),
     locale: z.enum(["ka", "en"], m("language")),
   })
   .refine((v) => v.closesAt > v.opensAt, { path: ["closesAt"], message: m("closesAfterOpens") });

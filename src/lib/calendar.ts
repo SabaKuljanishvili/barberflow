@@ -9,8 +9,17 @@ function parts(iso: string): [number, number, number] {
   return [y, m, d];
 }
 
+/**
+ * A real calendar date as "YYYY-MM-DD". Date.parse alone is not enough:
+ * V8 turns "2026-02-30" into 2 March, so the parts are compared back.
+ */
 export function isIsoDate(v: unknown): v is string {
-  return typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v) && !Number.isNaN(Date.parse(`${v}T00:00:00Z`));
+  if (typeof v !== "string") return false;
+  const m = v.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!m) return false;
+  const [y, mo, d] = [Number(m[1]), Number(m[2]), Number(m[3])];
+  const t = new Date(Date.UTC(y, mo - 1, d));
+  return t.getUTCFullYear() === y && t.getUTCMonth() === mo - 1 && t.getUTCDate() === d;
 }
 
 export function shiftDate(iso: string, days: number): string {

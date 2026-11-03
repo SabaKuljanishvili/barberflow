@@ -217,3 +217,10 @@ describe("closed dates in settings", () => {
     expect(salonSettingsSchema.safeParse({ ...valid, closedDates: ["31.12.2026"] }).success).toBe(false);
   });
 });
+
+describe("closed dates must be real dates", () => {
+  const valid = { name: "Ruiz Cuts", timezone: "Asia/Tbilisi", opensAt: "09:00", closesAt: "18:00", workingDays: ["1"], locale: "ka" };
+  it.each(["2026-13-45", "2026-02-30", "2026-04-31"])("rejects %s", (d) => {
+    expect(salonSettingsSchema.safeParse({ ...valid, closedDates: [d] }).success).toBe(false);
+  });
+});

@@ -27,7 +27,8 @@ export function describeService(t: Dictionary["voice"], s: Tables<"services">): 
 }
 
 export async function listServices({ db, salon }: SalonScope) {
-  const { data } = await db.from("services").select("*").eq("salon_id", salon.id).order("name").limit(9);
+  // The owner's order from the Services page; hidden services are never offered.
+  const { data } = await db.from("services").select("*").eq("salon_id", salon.id).eq("active", true).order("sort_order").order("name").limit(9);
   return data ?? [];
 }
 

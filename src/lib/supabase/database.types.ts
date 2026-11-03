@@ -80,6 +80,8 @@ export type Database = {
           name: string;
           price: number;
           duration_minutes: number;
+          sort_order: number;
+          active: boolean;
           created_at: string;
         };
         Insert: {
@@ -88,6 +90,8 @@ export type Database = {
           name: string;
           price: number;
           duration_minutes: number;
+          sort_order?: number;
+          active?: boolean;
           created_at?: string;
         };
         Update: Partial<Database["public"]["Tables"]["services"]["Insert"]>;

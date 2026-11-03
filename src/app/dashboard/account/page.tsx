@@ -5,8 +5,9 @@ import { Field } from "@/components/ui/field";
 import { PhoneField } from "@/components/ui/phone-field";
 import { PasswordField } from "@/components/ui/password-field";
 import { requireUser } from "@/lib/auth";
+import { fmt } from "@/i18n/config";
 import { getI18n } from "@/i18n/server";
-import { changeEmail, changePassword, updateAccount } from "../actions";
+import { changeEmail, changePassword, deleteSalon, updateAccount } from "../actions";
 
 export async function generateMetadata(): Promise<Metadata> {
   const { t } = await getI18n();
@@ -14,7 +15,7 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function AccountPage({ searchParams }: { searchParams: Promise<{ setPassword?: string; emailChanged?: string }> }) {
-  const { profile, isManager } = await requireUser();
+  const { profile, salon, isManager } = await requireUser();
   const { setPassword, emailChanged } = await searchParams;
   const { t } = await getI18n();
   const p = t.dashboard.account;
@@ -71,6 +72,41 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
           </ActionForm>
         </section>
       </div>
+
+      {isManager && (
+        <div className="grid gap-6 xl:grid-cols-2">
+          <section aria-labelledby="data" className="card">
+            <h2 id="data" className="text-lg font-semibold">
+              {p.data}
+            </h2>
+            <p className="mt-1 text-sm text-muted">{p.dataIntro}</p>
+            <div className="mt-4 flex flex-wrap gap-2">
+              {/* Plain links: the route streams a CSV download. */}
+              <a href="/dashboard/export?type=clients" className="btn-secondary" download>
+                {p.exportClients}
+              </a>
+              <a href="/dashboard/export?type=appointments" className="btn-secondary" download>
+                {p.exportAppointments}
+              </a>
+            </div>
+          </section>
+
+          <section aria-labelledby="delete-salon" className="card border-danger/40">
+            <h2 id="delete-salon" className="text-lg font-semibold text-danger">
+              {p.deleteSalon}
+            </h2>
+            <p className="mt-1 text-sm text-muted">{fmt(p.deleteSalonBody, { salon: salon.name })}</p>
+            <ActionForm action={deleteSalon} resetOnSuccess={false} className="mt-4 space-y-3" aria-label={p.deleteSalon}>
+              <Field label={fmt(p.typeSalonName, { salon: salon.name })} name="salonName" required autoComplete="off" spellCheck={false} />
+              <label className="flex items-start gap-3 text-sm">
+                <input type="checkbox" name="confirm" required className="mt-0.5 size-4 accent-brand" />
+                {p.deleteSalonConfirm}
+              </label>
+              <PendingButton className="btn-danger w-full">{p.deleteSalonButton}</PendingButton>
+            </ActionForm>
+          </section>
+        </div>
+      )}
     </div>
   );
 }

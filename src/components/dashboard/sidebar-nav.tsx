@@ -2,7 +2,7 @@
 
 import Link, { useLinkStatus } from "next/link";
 import { usePathname } from "next/navigation";
-import { AudioLines, CalendarDays, LayoutGrid, Scissors, Settings, UserRound, Users, Contact } from "lucide-react";
+import { AudioLines, CalendarDays, Contact, CreditCard, LayoutGrid, Scissors, Settings, UserRound, Users } from "lucide-react";
 import { useI18n } from "@/i18n/client";
 
 export const NAV_ITEMS = [
@@ -13,6 +13,7 @@ export const NAV_ITEMS = [
   { href: "/dashboard/services", key: "services", icon: Scissors, managerOnly: true },
   { href: "/dashboard/team", key: "team", icon: Users, managerOnly: true },
   { href: "/dashboard/settings", key: "settings", icon: Settings, managerOnly: true },
+  { href: "/dashboard/billing", key: "billing", icon: CreditCard, managerOnly: true },
   { href: "/dashboard/account", key: "account", icon: UserRound, managerOnly: false },
 ] as const;
 

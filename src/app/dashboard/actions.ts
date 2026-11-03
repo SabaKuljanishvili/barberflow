@@ -61,11 +61,13 @@ export async function createService(_prev: FormState, formData: FormData): Promi
     const parsed = parseIn(serviceSchema, Object.fromEntries(formData), locale);
     if (!parsed.success) return toFormState(parsed.error, t.validation);
     const supabase = await createSupabaseServerClient();
+    const { data: last } = await supabase.from("services").select("sort_order").eq("salon_id", salon.id).order("sort_order", { ascending: false }).limit(1).maybeSingle();
     const { error } = await supabase.from("services").insert({
       salon_id: salon.id,
       name: parsed.data.name,
       price: parsed.data.price,
       duration_minutes: parsed.data.durationMinutes,
+      sort_order: (last?.sort_order ?? 0) + 1,
     });
     if (error) return dbError(t, error.code, t.actions.serviceAddFailed);
     revalidatePath("/dashboard/services");
@@ -73,12 +75,58 @@ export async function createService(_prev: FormState, formData: FormData): Promi
   });
 }
 
+export async function updateService(_prev: FormState, formData: FormData): Promise<FormState> {
+  return withSession(true, async ({ salon, locale, t }) => {
+    const id = z.uuid().safeParse(formData.get("id"));
+    const parsed = parseIn(serviceSchema, Object.fromEntries(formData), locale);
+    if (!id.success) return { ok: false, message: t.actions.invalidService };
+    if (!parsed.success) return toFormState(parsed.error, t.validation);
+    const supabase = await createSupabaseServerClient();
+    const { data, error } = await supabase
+      .from("services")
+      .update({ name: parsed.data.name, price: parsed.data.price, duration_minutes: parsed.data.durationMinutes, active: formData.get("active") === "on" })
+      .eq("id", id.data)
+      .eq("salon_id", salon.id)
+      .select("id");
+    if (error) return dbError(t, error.code, t.actions.updateFailed);
+    if (!data?.length) return { ok: false, message: t.actions.forbidden };
+    revalidatePath("/dashboard/services");
+    return { ok: true, message: t.actions.serviceSaved };
+  });
+}
+
+/** Swaps a service with its neighbour in the voice agent's reading order. */
+export async function moveService(_prev: FormState, formData: FormData): Promise<FormState> {
+  return withSession(true, async ({ salon, t }) => {
+    const id = z.uuid().safeParse(formData.get("id"));
+    const dir = formData.get("dir") === "up" ? "up" : "down";
+    if (!id.success) return { ok: false, message: t.actions.invalidService };
+    const supabase = await createSupabaseServerClient();
+    const { data: list } = await supabase.from("services").select("id, sort_order").eq("salon_id", salon.id).order("sort_order").order("name");
+    const rows = list ?? [];
+    const i = rows.findIndex((r) => r.id === id.data);
+    const j = dir === "up" ? i - 1 : i + 1;
+    if (i < 0 || j < 0 || j >= rows.length) return null;
+    // Renumber densely so equal sort_order values (old data) can't stick.
+    [rows[i], rows[j]] = [rows[j], rows[i]];
+    const updates = rows.map((r, k) => ({ id: r.id, order: k + 1 })).filter((u) => rows.find((r) => r.id === u.id)?.sort_order !== u.order);
+    for (const u of updates) {
+      const { error } = await supabase.from("services").update({ sort_order: u.order }).eq("id", u.id).eq("salon_id", salon.id);
+      if (error) return dbError(t, error.code, t.actions.updateFailed);
+    }
+    revalidatePath("/dashboard/services");
+    return null;
+  });
+}
+
 export async function deleteService(_prev: FormState, formData: FormData): Promise<FormState> {
   return withSession(true, async ({ salon, t }) => {
     const id = z.uuid().safeParse(formData.get("id"));
     if (!id.success) return { ok: false, message: t.actions.invalidService };
+    if (formData.get("confirm") !== "on") return { ok: false, message: t.actions.confirmFirst };
     const supabase = await createSupabaseServerClient();
     const { error } = await supabase.from("services").delete().eq("id", id.data).eq("salon_id", salon.id);
+    if (error?.code === "23503") return { ok: false, message: t.actions.inUseHide };
     if (error) return dbError(t, error.code, t.actions.serviceRemoveFailed);
     revalidatePath("/dashboard/services");
     return { ok: true, message: t.actions.serviceRemoved };
@@ -500,5 +548,38 @@ export async function changeEmail(_prev: FormState, formData: FormData): Promise
       return { ok: false, message: t.actions.emailChangeFailed };
     }
     return { ok: true, message: fmt(t.actions.emailChangeSent, { email }) };
+  });
+}
+
+/**
+ * Deletes the whole salon: every staff login, then the salon row, which
+ * cascades to services, clients, appointments and call logs. Archived visits
+ * are removed by salon id. The manager must type the salon name exactly and
+ * tick the confirmation. Runs with the service role after the manager check.
+ */
+export async function deleteSalon(_prev: FormState, formData: FormData): Promise<FormState> {
+  return withSession(true, async ({ salon, t }) => {
+    if (formData.get("confirm") !== "on") return { ok: false, message: t.actions.confirmFirst };
+    if (String(formData.get("salonName") ?? "").trim() !== salon.name.trim()) {
+      return { ok: false, message: t.actions.salonNameMismatch, fieldErrors: { salonName: [t.actions.salonNameMismatch] } };
+    }
+    const admin = createSupabaseAdminClient();
+    const { data: staff, error: staffError } = await admin.from("profiles").select("id").eq("salon_id", salon.id);
+    if (staffError) return { ok: false, message: t.actions.deleteSalonFailed };
+
+    await admin.from("appointments_archive").delete().eq("salon_id", salon.id);
+    const { error } = await admin.from("salons").delete().eq("id", salon.id);
+    if (error) {
+      console.error("salon delete failed", error.code);
+      return { ok: false, message: t.actions.deleteSalonFailed };
+    }
+    // Profiles are gone with the salon; now remove the logins themselves.
+    for (const s of staff ?? []) {
+      const { error: userError } = await admin.auth.admin.deleteUser(s.id);
+      if (userError) console.error("staff login delete failed", userError.code);
+    }
+    const supabase = await createSupabaseServerClient();
+    await supabase.auth.signOut({ scope: "local" });
+    redirect("/?deleted=1");
   });
 }

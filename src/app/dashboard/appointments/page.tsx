@@ -74,7 +74,7 @@ export default async function AppointmentsPage({ searchParams }: { searchParams:
     view === "list" ? listQuery : calendarQuery,
     supabase.from("clients").select("id, first_name, last_name, phone_number").order("first_name").limit(500),
     supabase.from("profiles").select("id, full_name").order("full_name"),
-    supabase.from("services").select("id, name, duration_minutes").order("name"),
+    supabase.from("services").select("id, name, duration_minutes").eq("active", true).order("sort_order").order("name"),
     sp.appt ? supabase.from("appointments").select(SELECT).eq("id", sp.appt).maybeSingle() : Promise.resolve({ data: null }),
   ]);
 

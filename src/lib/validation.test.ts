@@ -3,7 +3,7 @@ import { money, spokenMoney } from "./format";
 import { splitE164 } from "./phone-countries";
 import { en } from "@/i18n/dictionaries/en";
 import { ka } from "@/i18n/dictionaries/ka";
-import { accountPasswordSchema, appointmentSchema, bookingClientSchema, normalizePhone, parseIn, passwordSchema, salonSettingsSchema, sanitizeText, serviceSchema, signupSchema, toFormState, withDateTime, withDialCode, withTime } from "./validation";
+import { accountPasswordSchema, appointmentSchema, bookingClientSchema, normalizePhone, parseIn, passwordSchema, salonSettingsSchema, salonSettingsUpdate, sanitizeText, serviceSchema, signupSchema, toFormState, withDateTime, withDialCode, withTime } from "./validation";
 
 describe("localized errors", () => {
   it("translates custom message keys", () => {
@@ -203,5 +203,17 @@ describe("accountPasswordSchema", () => {
   it("has translations for every custom message", () => {
     expect(en.validation.passwordSame).toBeTruthy();
     expect(ka.validation.passwordSame).toBeTruthy();
+  });
+});
+
+describe("closed dates in settings", () => {
+  const valid = { name: "Ruiz Cuts", timezone: "Asia/Tbilisi", opensAt: "09:00", closesAt: "18:00", workingDays: ["1"], locale: "ka" };
+  it("drops blanks, dedupes and sorts", () => {
+    const r = salonSettingsSchema.parse({ ...valid, closedDates: ["2026-12-31", "", "2026-01-01", "2026-12-31"] });
+    expect(salonSettingsUpdate(r).closed_dates).toEqual(["2026-01-01", "2026-12-31"]);
+    expect(salonSettingsUpdate(salonSettingsSchema.parse(valid)).closed_dates).toEqual([]);
+  });
+  it("rejects a malformed date", () => {
+    expect(salonSettingsSchema.safeParse({ ...valid, closedDates: ["31.12.2026"] }).success).toBe(false);
   });
 });

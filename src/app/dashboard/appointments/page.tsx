@@ -10,6 +10,7 @@ import { ActionForm, PendingButton } from "@/components/ui/action-form";
 import { AutoSubmitForm } from "@/components/ui/auto-submit-form";
 import { SelectField } from "@/components/ui/field";
 import { requireUser } from "@/lib/auth";
+import { salonHours } from "@/lib/availability";
 import { blockPosition, dayRows, isIsoDate, isoWeekday, shiftDate, weekDates } from "@/lib/calendar";
 import { clientName } from "@/lib/format";
 import type { AppointmentStatus } from "@/lib/supabase/database.types";
@@ -73,7 +74,7 @@ export default async function AppointmentsPage({ searchParams }: { searchParams:
   const [appts, clients, staff, services, detail] = await Promise.all([
     view === "list" ? listQuery : calendarQuery,
     supabase.from("clients").select("id, first_name, last_name, phone_number").order("first_name").limit(500),
-    supabase.from("profiles").select("id, full_name").order("full_name"),
+    supabase.from("profiles").select("id, full_name").eq("active", true).eq("takes_clients", true).order("full_name"),
     supabase.from("services").select("id, name, duration_minutes").eq("active", true).order("sort_order").order("name"),
     sp.appt ? supabase.from("appointments").select(SELECT).eq("id", sp.appt).maybeSingle() : Promise.resolve({ data: null }),
   ]);
@@ -87,7 +88,7 @@ export default async function AppointmentsPage({ searchParams }: { searchParams:
   const preselected = knownClients.find((c) => c.id === sp.client);
   const presetStaff = bookableStaff.some((s) => s.id === sp.staff) ? sp.staff : undefined;
 
-  const hours = { opensAt: salon.opens_at, closesAt: salon.closes_at, workingDays: salon.working_days };
+  const hours = salonHours(salon);
   const [firstOpen] = findOpenSlots({ ...hours, from: now, timeZone: salon.timezone, durationMinutes: 15, busy: [], count: 1, stepMinutes: 15, leadMinutes: 0 });
   const nextSlotDate = toLocalInputValue(firstOpen ?? now, salon.timezone).split("T")[0];
   const bookDate = view === "day" && date >= todayIso ? date : nextSlotDate;
@@ -188,7 +189,7 @@ export default async function AppointmentsPage({ searchParams }: { searchParams:
               timeZone={salon.timezone}
               opensAt={salon.opens_at}
               closesAt={salon.closes_at}
-              closed={!salon.working_days.includes(isoWeekday(date))}
+              closed={!salon.working_days.includes(isoWeekday(date)) || salon.closed_dates.includes(date)}
               barbers={barbers}
               bookable={new Set(bookableStaff.map((b) => b.id))}
               appts={rows.map((a) => ({
@@ -230,7 +231,7 @@ export default async function AppointmentsPage({ searchParams }: { searchParams:
                         ))}
                       </ul>
                     ) : (
-                      <p className="mt-2 text-xs text-muted">{salon.working_days.includes(isoWeekday(iso)) ? p.dayEmpty : p.closedDay}</p>
+                      <p className="mt-2 text-xs text-muted">{salon.working_days.includes(isoWeekday(iso)) && !salon.closed_dates.includes(iso) ? p.dayEmpty : p.closedDay}</p>
                     )}
                   </li>
                 );

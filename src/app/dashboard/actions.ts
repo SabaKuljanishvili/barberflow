@@ -12,7 +12,7 @@ import { rateLimit } from "@/lib/rate-limit";
 import { createSupabaseAdminClient, createSupabaseServerClient, verifyPassword } from "@/lib/supabase/server";
 import { freeBarbersFor } from "@/lib/booking";
 import { lookupTwilioNumber } from "@/lib/voice/twilio-numbers";
-import { dayAvailability } from "@/lib/availability";
+import { dayAvailability, salonHours } from "@/lib/availability";
 import { parseLocalDateTime, workingHoursProblem, zonedDayBounds, zonedToUtc } from "@/lib/time";
 import {
   accountPasswordSchema,
@@ -228,7 +228,7 @@ export async function createAppointment(_prev: FormState, formData: FormData): P
       .eq("salon_id", salon.id)
       .maybeSingle();
     if (!service) return { ok: false, message: t.actions.invalidService };
-    const hours = { opensAt: salon.opens_at, closesAt: salon.closes_at, workingDays: salon.working_days };
+    const hours = salonHours(salon);
     const problem = workingHoursProblem(start, service.duration_minutes, salon.timezone, hours);
     if (problem === "closedDay") return { ok: false, message: t.actions.closedDay };
     if (problem) return { ok: false, message: fmt(t.actions.outsideHours, { opens: salon.opens_at.slice(0, 5), closes: salon.closes_at.slice(0, 5) }) };
@@ -256,6 +256,10 @@ export async function createAppointment(_prev: FormState, formData: FormData): P
       clientId = created.id;
     }
 
+    if (staffId) {
+      const { data: barber } = await supabase.from("profiles").select("active, takes_clients").eq("id", staffId).eq("salon_id", salon.id).maybeSingle();
+      if (!barber?.active || !barber.takes_clients) return { ok: false, message: t.actions.barberUnavailable };
+    }
     const end = new Date(start.getTime() + service.duration_minutes * 60_000);
     const candidates = staffId ? [staffId] : await freeBarbers(supabase, salon, start, end);
     if (!candidates.length) return { ok: false, message: t.actions.noBarberFree };
@@ -302,7 +306,7 @@ export async function availableSlots(input: { serviceId: string; staffId: string
   const dayEnd = zonedToUtc(y, m, d + 1, 0, 0, salon.timezone);
   const [service, staff, appts] = await Promise.all([
     supabase.from("services").select("duration_minutes").eq("id", serviceId.data).eq("salon_id", salon.id).maybeSingle(),
-    wanted ? Promise.resolve({ data: [{ id: wanted }] }) : supabase.from("profiles").select("id").eq("salon_id", salon.id),
+    wanted ? Promise.resolve({ data: [{ id: wanted }] }) : supabase.from("profiles").select("id").eq("salon_id", salon.id).eq("active", true).eq("takes_clients", true),
     supabase
       .from("appointments")
       .select("staff_id, appointment_time, ends_at")
@@ -316,7 +320,7 @@ export async function availableSlots(input: { serviceId: string; staffId: string
   return dayAvailability({
     date: date.data,
     timeZone: salon.timezone,
-    hours: { opensAt: salon.opens_at, closesAt: salon.closes_at, workingDays: salon.working_days },
+    hours: salonHours(salon),
     durationMinutes: service.data.duration_minutes,
     now: new Date(),
     barbers: (staff.data ?? []).map((b) => ({
@@ -330,7 +334,7 @@ export async function availableSlots(input: { serviceId: string; staffId: string
 async function freeBarbers(supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>, salon: SessionContext["salon"], start: Date, end: Date) {
   const day = zonedDayBounds(start, salon.timezone);
   const [staff, appts] = await Promise.all([
-    supabase.from("profiles").select("id").eq("salon_id", salon.id).order("full_name"),
+    supabase.from("profiles").select("id").eq("salon_id", salon.id).eq("active", true).eq("takes_clients", true).order("full_name"),
     supabase
       .from("appointments")
       .select("staff_id, appointment_time, ends_at")
@@ -379,7 +383,7 @@ export async function rescheduleAppointment(_prev: FormState, formData: FormData
       .eq("salon_id", salon.id)
       .maybeSingle();
     if (!appt?.services) return { ok: false, message: t.actions.forbidden };
-    const hours = { opensAt: salon.opens_at, closesAt: salon.closes_at, workingDays: salon.working_days };
+    const hours = salonHours(salon);
     const problem = workingHoursProblem(start, appt.services.duration_minutes, salon.timezone, hours);
     if (problem === "closedDay") return { ok: false, message: t.actions.closedDay };
     if (problem) return { ok: false, message: fmt(t.actions.outsideHours, { opens: salon.opens_at.slice(0, 5), closes: salon.closes_at.slice(0, 5) }) };
@@ -434,6 +438,51 @@ export async function inviteBarber(_prev: FormState, formData: FormData): Promis
   });
 }
 
+/** Manager edits another member: role, active, takes clients. Not their own role (no lock-out). */
+export async function updateStaff(_prev: FormState, formData: FormData): Promise<FormState> {
+  return withSession(true, async ({ salon, userId, t }) => {
+    const id = z.uuid().safeParse(formData.get("id"));
+    const role = z.enum(["manager", "barber"]).safeParse(formData.get("role"));
+    if (!id.success || !role.success) return { ok: false, message: t.actions.invalidMember };
+    const self = id.data === userId;
+    const admin = createSupabaseAdminClient();
+    const { data, error } = await admin
+      .from("profiles")
+      .update({
+        takes_clients: formData.get("takesClients") === "on",
+        // A manager can't demote or deactivate themselves.
+        ...(self ? {} : { role: role.data, active: formData.get("active") === "on" }),
+      })
+      .eq("id", id.data)
+      .eq("salon_id", salon.id)
+      .select("id");
+    if (error) return dbError(t, error.code, t.actions.updateFailed);
+    if (!data?.length) return { ok: false, message: t.actions.forbidden };
+    revalidatePath("/dashboard", "layout");
+    return { ok: true, message: t.actions.memberSaved };
+  });
+}
+
+/** Sends the invite email again to someone who hasn't signed in yet. */
+export async function resendInvite(_prev: FormState, formData: FormData): Promise<FormState> {
+  return withSession(true, async ({ salon, t }) => {
+    const id = z.uuid().safeParse(formData.get("id"));
+    if (!id.success) return { ok: false, message: t.actions.invalidMember };
+    const admin = createSupabaseAdminClient();
+    const { data: member } = await admin.from("profiles").select("email, full_name").eq("id", id.data).eq("salon_id", salon.id).maybeSingle();
+    if (!member) return { ok: false, message: t.actions.forbidden };
+    const { error } = await admin.auth.admin.inviteUserByEmail(member.email, {
+      redirectTo: `${siteUrl()}/auth/confirm?next=${encodeURIComponent("/reset-password?invite=1")}`,
+      data: { full_name: member.full_name },
+    });
+    if (error) {
+      console.error("invite resend failed", error.code);
+      return { ok: false, message: t.actions.inviteFailed };
+    }
+    return { ok: true, message: fmt(t.actions.inviteSent, { email: member.email }) };
+  });
+}
+
 export async function removeStaff(_prev: FormState, formData: FormData): Promise<FormState> {
   return withSession(true, async ({ salon, userId, t }) => {
     const id = z.uuid().safeParse(formData.get("id"));
@@ -471,6 +520,7 @@ export async function updateSalonSettings(_prev: FormState, formData: FormData):
         opensAt: withTime(formData, "opensAt"),
         closesAt: withTime(formData, "closesAt"),
         workingDays: formData.getAll("workingDays"),
+        closedDates: formData.getAll("closedDates").map(String),
       },
       locale,
     );

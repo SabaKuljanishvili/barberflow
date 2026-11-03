@@ -94,6 +94,8 @@ export type SlotQuery = {
   opensAt: string; // "HH:MM" or "HH:MM:SS"
   closesAt: string;
   workingDays: number[];
+  /** Salon-local "YYYY-MM-DD" days the shop is closed (holidays). */
+  closedDates?: string[];
   durationMinutes: number;
   busy: Busy[];
   count: number;
@@ -118,6 +120,7 @@ export function findOpenSlots(q: SlotQuery): Date[] {
     const day = dayUtc.getUTCDate();
     const weekday = ((dayUtc.getUTCDay() + 6) % 7) + 1;
     if (!q.workingDays.includes(weekday)) continue;
+    if (q.closedDates?.includes(isoDay(y, m, day))) continue;
 
     const close = zonedToUtc(y, m, day, ch, cm, q.timeZone).getTime();
     for (
@@ -134,7 +137,12 @@ export function findOpenSlots(q: SlotQuery): Date[] {
   return slots;
 }
 
-type Hours = { opensAt: string; closesAt: string; workingDays: number[] };
+type Hours = { opensAt: string; closesAt: string; workingDays: number[]; closedDates?: string[] };
+
+const pad2 = (n: number) => String(n).padStart(2, "0");
+function isoDay(y: number, m: number, d: number): string {
+  return y + "-" + pad2(m) + "-" + pad2(d);
+}
 
 const minutesOfDay = (hhmm: string) => {
   const [h, m] = hhmm.split(":").map(Number);
@@ -157,6 +165,7 @@ export function workingHoursProblem(
 ): "closedDay" | "outsideHours" | null {
   const p = zonedParts(start, timeZone);
   if (!h.workingDays.includes(p.weekday)) return "closedDay";
+  if (h.closedDates?.includes(isoDay(p.year, p.month, p.day))) return "closedDay";
   const begin = p.hour * 60 + p.minute;
   if (begin < minutesOfDay(h.opensAt) || begin + durationMinutes > minutesOfDay(h.closesAt)) return "outsideHours";
   return null;

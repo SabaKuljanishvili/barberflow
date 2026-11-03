@@ -117,3 +117,15 @@ describe("working hours", () => {
     expect(timeZoneLabel("America/New_York", "Tbilisi", new Date("2026-01-15T12:00:00Z"))).toBe("America/New York (GMT-5)");
   });
 });
+
+describe("closed dates (holidays)", () => {
+  const hours = { opensAt: "09:00", closesAt: "11:00", workingDays: [1, 2, 3, 4, 5, 6], closedDates: ["2026-11-04"] };
+  it("findOpenSlots skips a closed date in salon time", () => {
+    const slots = findOpenSlots({ ...hours, from: new Date("2026-11-04T03:00:00Z"), timeZone: "Asia/Tbilisi", durationMinutes: 60, busy: [], count: 1, leadMinutes: 0 });
+    expect(slots[0].toISOString()).toBe("2026-11-05T05:00:00.000Z");
+  });
+  it("workingHoursProblem reports a closed date as a closed day", () => {
+    expect(workingHoursProblem(new Date("2026-11-04T06:00:00Z"), 30, "Asia/Tbilisi", hours)).toBe("closedDay");
+    expect(workingHoursProblem(new Date("2026-11-05T06:00:00Z"), 30, "Asia/Tbilisi", hours)).toBeNull();
+  });
+});

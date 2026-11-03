@@ -164,6 +164,12 @@ export const salonSettingsSchema = z
     workingDays: z.array(z.coerce.number().int().min(1).max(7)).min(1, m("workingDays")),
     voiceAgentEnabled: z.literal("on").optional(),
     autoComplete: z.literal("on").optional(),
+    // Holidays: salon-local dates; blank rows from the form are dropped.
+    closedDates: z
+      .array(z.string())
+      .optional()
+      .transform((list) => (list ?? []).filter((d) => d.trim() !== ""))
+      .pipe(z.array(z.string().regex(/^\d{4}-\d{2}-\d{2}$/, m("dateTime"))).max(100)),
     locale: z.enum(["ka", "en"], m("language")),
   })
   .refine((v) => v.closesAt > v.opensAt, { path: ["closesAt"], message: m("closesAfterOpens") });
@@ -183,6 +189,7 @@ export function salonSettingsUpdate(v: z.output<typeof salonSettingsSchema>) {
     voice_agent_enabled: v.voiceAgentEnabled === "on",
     auto_complete_appointments: v.autoComplete === "on",
     locale: v.locale,
+    closed_dates: [...new Set(v.closedDates)].sort(),
   };
 }
 

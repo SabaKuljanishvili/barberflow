@@ -27,7 +27,7 @@ export default async function OverviewPage({ searchParams }: { searchParams: Pro
   const weekStart = new Date(today.start.getTime() - 6 * 86_400_000);
   const monthStart = new Date(today.start.getTime() - 29 * 86_400_000);
 
-  const [todayAppts, week, newClients, calls, review] = await Promise.all([
+  const [todayAppts, week, newClients, calls, review, missed] = await Promise.all([
     supabase
       .from("appointments")
       .select("id, appointment_time, status, staff_id, clients(first_name, last_name, phone_number), services(name), profiles(full_name)")
@@ -51,7 +51,16 @@ export default async function OverviewPage({ searchParams }: { searchParams: Pro
       .lt("ends_at", now.toISOString())
       .order("appointment_time", { ascending: false })
       .limit(8),
+    supabase
+      .from("call_logs")
+      .select("id, from_number, outcome, created_at, call_status")
+      .neq("outcome", "booked")
+      .gte("created_at", weekStart.toISOString())
+      .order("created_at", { ascending: false })
+      .limit(6),
   ]);
+  // Web voice sessions are the staff testing; only real phone calls count here.
+  const missedCalls = (missed.data ?? []).filter((c) => c.call_status !== "web");
   const reviewItems: ReviewItem[] = (review.data ?? []).map((a) => ({
     id: a.id,
     client: clientName(a.clients, t.dashboard.unknownClient),
@@ -140,6 +149,32 @@ export default async function OverviewPage({ searchParams }: { searchParams: Pro
             </ul>
           ) : (
             <p className="mt-4 text-sm text-muted">{o.noneToday}</p>
+          )}
+        </section>
+
+        <section aria-labelledby="missed" className="card">
+          <h2 id="missed" className="text-lg font-semibold">
+            {o.missed}
+          </h2>
+          <p className="text-sm text-muted">{o.missedNote}</p>
+          {missedCalls.length ? (
+            <ul className="mt-4 divide-y divide-line">
+              {missedCalls.map((c) => (
+                <li key={c.id} className="flex flex-wrap items-center justify-between gap-2 py-2.5">
+                  <div className="min-w-0">
+                    <p className="font-medium tabular-nums">{c.from_number}</p>
+                    <p className="text-xs text-muted">
+                      {formatInZone(c.created_at, salon.timezone, {}, intl)} · {o.outcomes[c.outcome]}
+                    </p>
+                  </div>
+                  <a href={`tel:${c.from_number}`} className="btn-secondary py-1.5 text-sm" aria-label={fmt(o.callBackLabel, { number: c.from_number })}>
+                    {o.callBack}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="mt-4 text-sm text-muted">{o.noMissed}</p>
           )}
         </section>
 

@@ -24,6 +24,7 @@ export type Database = {
           voice_agent_enabled: boolean;
           locale: LocaleCode;
           auto_complete_appointments: boolean;
+          closed_dates: string[];
           created_at: string;
         };
         Insert: {
@@ -38,6 +39,7 @@ export type Database = {
           voice_agent_enabled?: boolean;
           locale?: LocaleCode;
           auto_complete_appointments?: boolean;
+          closed_dates?: string[];
           created_at?: string;
         };
         Update: Partial<Database["public"]["Tables"]["salons"]["Insert"]>;
@@ -51,6 +53,8 @@ export type Database = {
           role: StaffRole;
           email: string;
           phone: string | null;
+          active: boolean;
+          takes_clients: boolean;
           created_at: string;
         };
         Insert: {
@@ -60,6 +64,8 @@ export type Database = {
           role?: StaffRole;
           email: string;
           phone?: string | null;
+          active?: boolean;
+          takes_clients?: boolean;
           created_at?: string;
         };
         Update: Partial<Database["public"]["Tables"]["profiles"]["Insert"]>;

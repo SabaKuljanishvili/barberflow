@@ -33,7 +33,8 @@ export async function listServices({ db, salon }: SalonScope) {
 }
 
 export async function listBarbers({ db, salon }: SalonScope) {
-  const { data } = await db.from("profiles").select("id, full_name").eq("salon_id", salon.id).order("full_name").limit(8);
+  // Deactivated staff and managers who don't take clients are never offered.
+  const { data } = await db.from("profiles").select("id, full_name").eq("salon_id", salon.id).eq("active", true).eq("takes_clients", true).order("full_name").limit(8);
   return data ?? [];
 }
 
@@ -97,6 +98,7 @@ export async function nextSlots(
       opensAt: salon.opens_at,
       closesAt: salon.closes_at,
       workingDays: salon.working_days,
+      closedDates: salon.closed_dates ?? [],
       durationMinutes: service.duration_minutes,
       busy: (busy ?? [])
         .filter((x) => x.staff_id === b.id)

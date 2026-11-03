@@ -9,7 +9,7 @@ export type DaySlot = { start: Date; time: string; staffIds: string[] };
 export type DayQuery = {
   date: string; // "YYYY-MM-DD" in the salon's timezone
   timeZone: string;
-  hours: { opensAt: string; closesAt: string; workingDays: number[] };
+  hours: { opensAt: string; closesAt: string; workingDays: number[]; closedDates?: string[] };
   durationMinutes: number;
   barbers: { id: string; busy: Busy[] }[];
   now: Date;
@@ -39,6 +39,7 @@ export function dayAvailability(q: DayQuery): DaySlot[] {
       opensAt: q.hours.opensAt,
       closesAt: q.hours.closesAt,
       workingDays: q.hours.workingDays,
+      closedDates: q.hours.closedDates,
       durationMinutes: q.durationMinutes,
       busy: b.busy,
     });
@@ -55,4 +56,9 @@ export function dayAvailability(q: DayQuery): DaySlot[] {
       const p = zonedParts(new Date(t), q.timeZone);
       return { start: new Date(t), time: `${pad(p.hour)}:${pad(p.minute)}`, staffIds };
     });
+}
+
+/** Opening rules of a salon row, in the shape findOpenSlots and workingHoursProblem take. */
+export function salonHours(s: { opens_at: string; closes_at: string; working_days: number[]; closed_dates?: string[] | null }) {
+  return { opensAt: s.opens_at, closesAt: s.closes_at, workingDays: s.working_days, closedDates: s.closed_dates ?? [] };
 }

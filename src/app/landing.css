@@ -357,6 +357,10 @@ html:has(.bf) {
   height: 0;
   overflow: hidden;
 }
+/* Line break before the green phrase: phones only (see the mobile block). */
+.bf .headline .hl-br {
+  display: none;
+}
 .bf .headline .w {
   display: inline-block;
   white-space: nowrap;
@@ -1585,11 +1589,17 @@ html:has(.bf) {
     padding-bottom: 64px;
   }
   .bf .headline {
-    font-size: 36px;
+    font-size: 52px;
+    line-height: 1.08;
     margin-top: 16px;
   }
+  /* Each part of the headline on its own line. */
+  .bf .headline .hl-br {
+    display: inline;
+  }
   .bf .lede {
-    font-size: 16px;
+    font-size: 15px;
+    color: var(--muted);
     margin: 18px 0 24px;
   }
   .bf .ctas {

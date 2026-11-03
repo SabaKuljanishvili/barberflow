@@ -15,6 +15,8 @@ export function HeroHeadline({ text }: { text: HeadlineText }) {
         {words.map((word, w) => (
           <Fragment key={w}>
             {w > 0 && " "}
+            {/* Phones put the green phrase on its own line (landing.css, .hl-br). */}
+            {w > 0 && word[0]?.j === 0 && <br className="hl-br" />}
             <span className="w">
               {word.map(({ ch, i, j }) => (
                 <span

@@ -92,19 +92,21 @@ export default async function OverviewPage({ searchParams }: { searchParams: Pro
       <section aria-label={o.keyNumbers} className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <Stat
           highlight
+          href="/dashboard/appointments"
           icon={CalendarDays}
           label={o.apptsToday}
           value={String(todayList.length)}
           note={fmt(o.awaitingCount, { count: todayList.filter((a) => a.status === "pending").length })}
         />
-        <Stat icon={Banknote} label={o.revenue} value={money(revenue)} note={o.revenueNote} />
+        <Stat href="/dashboard/appointments?range=past&status=completed" icon={Banknote} label={o.revenue} value={money(revenue)} note={o.revenueNote} />
         <Stat
+          href="/dashboard/voice"
           icon={PhoneIncoming}
           label={o.calls}
           value={String(callRows.length)}
           note={fmt(o.callsNote, { count: booked })}
         />
-        <Stat icon={UserPlus} label={o.newClients} value={String(newClients.count ?? 0)} note={o.newClientsNote} />
+        <Stat href="/dashboard/clients" icon={UserPlus} label={o.newClients} value={String(newClients.count ?? 0)} note={o.newClientsNote} />
       </section>
 
       <ReviewCard items={reviewItems} labels={o} />
@@ -180,7 +182,9 @@ function Stat({
   value,
   note,
   highlight = false,
+  href,
 }: {
+  href: string;
   icon: React.ComponentType<{ className?: string; "aria-hidden"?: boolean }>;
   label: string;
   value: string;
@@ -188,7 +192,10 @@ function Stat({
   highlight?: boolean;
 }) {
   return (
-    <div className={highlight ? "rounded-3xl bg-brand p-6 text-on-brand shadow-soft" : "card"}>
+    <Link
+      href={href}
+      className={`block transition-transform hover:-translate-y-0.5 focus-visible:-translate-y-0.5 ${highlight ? "rounded-3xl bg-brand p-6 text-on-brand shadow-soft" : "card hover:border-accent"}`}
+    >
       <div className="flex items-center justify-between gap-3">
         <p className={`text-sm font-medium ${highlight ? "text-on-brand/90" : "text-muted"}`}>{label}</p>
         <span
@@ -199,6 +206,6 @@ function Stat({
       </div>
       <p className="mt-3 text-3xl font-bold tracking-tight tabular-nums">{value}</p>
       <p className={`mt-1 text-sm ${highlight ? "text-on-brand/90" : "text-muted"}`}>{note}</p>
-    </div>
+    </Link>
   );
 }

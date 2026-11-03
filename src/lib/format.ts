@@ -1,8 +1,9 @@
 type ClientLike = { first_name: string; last_name: string; phone_number: string } | null;
 
-export function clientName(c: ClientLike, unknown = "Unknown client"): string {
+/** "First Last"; without a name, `unnamed` (or the phone number when not given). */
+export function clientName(c: ClientLike, unknown = "Unknown client", unnamed?: string): string {
   if (!c) return unknown;
-  return `${c.first_name} ${c.last_name}`.trim() || c.phone_number;
+  return `${c.first_name} ${c.last_name}`.trim() || (unnamed ?? c.phone_number);
 }
 
 const GEL = new Intl.NumberFormat("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });

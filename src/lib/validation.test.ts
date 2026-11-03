@@ -174,9 +174,11 @@ describe("bookingClientSchema", () => {
     });
     expect(bookingClientSchema.parse({ clientName: "Giorgi", phoneNumber: "+995599123456" }).lastName).toBe("");
   });
-  it("requires a name and a valid phone", () => {
-    expect(bookingClientSchema.safeParse({ clientName: "", phoneNumber: "+995599123456" }).success).toBe(false);
+  it("requires a valid phone (needed for SMS); the name is optional", () => {
+    expect(bookingClientSchema.parse({ clientName: "", phoneNumber: "+995599123456" })).toEqual({ firstName: "", lastName: "", phoneNumber: "+995599123456" });
+    expect(bookingClientSchema.parse({ phoneNumber: "+995599123456" }).firstName).toBe("");
     expect(bookingClientSchema.safeParse({ clientName: "Nino", phoneNumber: "123" }).success).toBe(false);
+    expect(bookingClientSchema.safeParse({ clientName: "Nino", phoneNumber: "" }).success).toBe(false);
   });
 });
 

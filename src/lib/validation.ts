@@ -131,12 +131,13 @@ export const appointmentSchema = z.object({
   localTime: z.string().regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/, m("dateTime")),
 });
 
-// The booking form takes a name and phone; the server matches the client by
-// phone or creates one. First word is the first name, the rest the last name.
+// The booking form takes a phone (required: confirmations go by SMS) and an
+// optional name; the server matches the client by phone or creates one.
+// First word is the first name, the rest the last name.
 export const bookingClientSchema = z
-  .object({ clientName: text(1, 120), phoneNumber: phoneSchema })
+  .object({ clientName: z.string().optional().default("").pipe(text(0, 120)), phoneNumber: phoneSchema })
   .transform(({ clientName, phoneNumber }) => {
-    const [first, ...rest] = clientName.split(" ");
+    const [first = "", ...rest] = clientName ? clientName.split(" ") : [];
     return { firstName: first.slice(0, 60), lastName: rest.join(" ").slice(0, 60), phoneNumber };
   });
 

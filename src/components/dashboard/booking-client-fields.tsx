@@ -53,7 +53,7 @@ export function BookingClientFields({
           <option key={`${c.phone}-${c.name}`} value={label(c)} />
         ))}
       </datalist>
-      <PhoneField label={phoneLabel} name="phoneNumber" autoComplete="off" defaultValue={defaultPhone} hint={hint} />
+      <PhoneField label={phoneLabel} name="phoneNumber" autoComplete="off" required defaultValue={defaultPhone} hint={hint} />
     </div>
   );
 }

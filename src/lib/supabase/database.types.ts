@@ -101,6 +101,7 @@ export type Database = {
           last_name: string;
           phone_number: string;
           locale: LocaleCode | null;
+          notes: string;
           created_at: string;
         };
         Insert: {
@@ -110,6 +111,7 @@ export type Database = {
           last_name?: string;
           phone_number: string;
           locale?: LocaleCode | null;
+          notes?: string;
           created_at?: string;
         };
         Update: Partial<Database["public"]["Tables"]["clients"]["Insert"]>;

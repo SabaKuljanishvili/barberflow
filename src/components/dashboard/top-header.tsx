@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Bell, ChevronDown, Search } from "lucide-react";
 import { LocaleSwitcher } from "@/components/locale-switcher";
+import { BrandMark } from "@/components/logo";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
 import { INTL_LOCALE, fmt } from "@/i18n/config";
 import { getI18n } from "@/i18n/server";
@@ -34,7 +35,11 @@ export async function TopHeader({
 
   return (
     <header className="flex flex-wrap items-center gap-3 rounded-3xl border border-line bg-surface px-4 py-3 shadow-soft">
-      <form action="/dashboard/clients" method="get" role="search" className="relative min-w-0 flex-1">
+      {/* Phones: the logo leads, and search takes its own full-width row. */}
+      <span className="flex-1 lg:hidden">
+        <BrandMark />
+      </span>
+      <form action="/dashboard/clients" method="get" role="search" className="relative order-last min-w-0 basis-full sm:order-none sm:basis-auto sm:flex-1">
         <label htmlFor="global-search" className="sr-only">
           {h.searchLabel}
         </label>

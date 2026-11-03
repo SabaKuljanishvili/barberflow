@@ -1,5 +1,6 @@
 import "server-only";
 import type { Locale } from "@/i18n/config";
+import { parseAzureEnv, type AzureEnv } from "@/lib/env-sections";
 import { serverEnv } from "@/lib/env.server";
 import { buildSsml, encodeText, signSpeech, splitForSpeech } from "./speech";
 import { webhookUrl } from "./twilio";
@@ -23,14 +24,9 @@ export const AUDIO_CONTENT_TYPE = "audio/wav";
 /** Browser playback (web voice agent): small, and decodable by every AudioContext. */
 export const WEB_AUDIO_FORMAT = "audio-24khz-48kbitrate-mono-mp3";
 
-export function azureConfig() {
-  const env = serverEnv();
-  if (!env.AZURE_SPEECH_KEY || !env.AZURE_SPEECH_REGION) return null;
-  return {
-    key: env.AZURE_SPEECH_KEY,
-    region: env.AZURE_SPEECH_REGION,
-    voices: { ka: env.AZURE_TTS_VOICE_KA, en: env.AZURE_TTS_VOICE_EN } satisfies Record<Locale, string>,
-  };
+/** Azure Speech credentials, or null when not (validly) configured. Never throws. */
+export function azureConfig(): (AzureEnv & { voices: Record<Locale, string> }) | null {
+  return parseAzureEnv(process.env);
 }
 
 let warned = false;
@@ -47,8 +43,7 @@ export function speakableLocale(wanted: Locale): Locale {
 
 /** Signing key for TTS URLs, derived so no extra secret is needed. */
 export function speechSecret(): string {
-  const env = serverEnv();
-  return `tts:${env.TWILIO_AUTH_TOKEN ?? env.SUPABASE_SERVICE_ROLE_KEY}`;
+  return `tts:${process.env.TWILIO_AUTH_TOKEN?.trim() || serverEnv().SUPABASE_SERVICE_ROLE_KEY}`;
 }
 
 export function speak(node: Speaker, text: string, locale: Locale): void {

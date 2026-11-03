@@ -90,7 +90,92 @@
   padding: 0 var(--gutter);
 }
 
-/* Header */
+/* Native scrolling; anchors land below the sticky header. */
+html:has(.bf) {
+  scroll-behavior: smooth;
+  scroll-padding-top: 96px;
+}
+
+/* Header: sticky on every size, over a blurred strip of the page. */
+.bf .bf-header-bar {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  background: color-mix(in srgb, var(--bg) 82%, transparent);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid color-mix(in srgb, var(--line2) 60%, transparent);
+}
+.bf .hdesk {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.bf .menu-btn {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  border: 1px solid var(--line2);
+  color: var(--ink);
+  background: transparent;
+  cursor: pointer;
+}
+.bf .menu-btn:hover {
+  background: var(--surface);
+}
+.bf .menu-sheet {
+  margin: 0 0 0 auto;
+  height: 100dvh;
+  max-height: none;
+  width: min(360px, 100vw);
+  padding: 0;
+  border: 0;
+  border-left: 1px solid var(--line2);
+  background: var(--bg);
+  color: var(--ink);
+}
+.bf .menu-sheet::backdrop {
+  background: rgb(0 0 0 / 0.45);
+}
+.bf .menu-inner {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding: 18px var(--gutter) 32px;
+}
+.bf .menu-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.bf .menu-title {
+  font-weight: 700;
+}
+.bf .menu-links {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.bf .menu-links a {
+  display: block;
+  padding: 14px 4px;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--ink);
+  border-bottom: 1px solid var(--line2);
+}
+.bf .menu-tools {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.bf .menu-ctas {
+  display: grid;
+  gap: 10px;
+}
 .bf .bf-header {
   display: flex;
   align-items: center;
@@ -223,14 +308,14 @@
 }
 /*
  * Hero headline (components/marketing/hero-headline.tsx), ported from
- * ../hero-headline-reference.html. Letters cascade in from blur
- * (24 ms apart), then a glint sweeps the green phrase every 3.6 s.
+ * ../hero-headline-reference.html. Letters settle into place (24 ms apart),
+ * then a glint sweeps the green phrase every 3.6 s. Everything in the hero is
+ * visible from the first paint (opacity 1, no blur): only transform animates,
+ * so the server HTML is readable at once and LCP is not delayed.
  * --end / --after are set inline by the component. No lines on the text.
  */
 .bf .hero .eyebrow {
   gap: 10px;
-  opacity: 0;
-  animation: hl-fade 0.6s 0.05s var(--ease) forwards;
 }
 .bf .hero .eyebrow::before {
   content: none;
@@ -278,10 +363,7 @@
 }
 .bf .headline .c {
   display: inline-block;
-  opacity: 0;
-  transform: translateY(0.35em) rotate(6deg);
-  filter: blur(8px);
-  animation: hl-in 0.7s var(--out) forwards;
+  animation: hl-in 0.7s var(--out) both;
   animation-delay: calc(150ms + var(--i) * 24ms);
 }
 .bf .headline .g {
@@ -290,7 +372,7 @@
 }
 .bf .headline .g.c {
   animation:
-    hl-in 0.7s var(--out) forwards,
+    hl-in 0.7s var(--out) both,
     hl-glint 3.6s ease-in-out infinite;
   animation-delay:
     calc(150ms + var(--i) * 24ms),
@@ -301,17 +383,15 @@
   color: var(--muted);
   margin: 26px 0 40px;
   max-width: 540px;
-  opacity: 0;
-  animation: hl-rise 0.8s var(--ease) forwards;
-  animation-delay: var(--after);
+  animation: hl-rise 0.6s var(--ease) both;
+  animation-delay: min(var(--after), 300ms);
 }
 .bf .ctas {
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
-  opacity: 0;
-  animation: hl-rise 0.8s var(--ease) forwards;
-  animation-delay: calc(var(--after) + 120ms);
+  animation: hl-rise 0.6s var(--ease) both;
+  animation-delay: min(calc(var(--after) + 120ms), 420ms);
 }
 .bf .bf-card {
   background: color-mix(in srgb, var(--surface) 88%, transparent);
@@ -483,8 +563,10 @@
   border-radius: 50%;
   background: var(--green-ink);
 }
+/* Load-time entrance: transform only, never hidden (readable before and
+   without animations). Scroll reveals (.sr) still fade in. */
 .bf .r {
-  animation: rise 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  animation: nudge 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) both;
 }
 .bf .d5 { animation-delay: 0.6s; }
 .bf .s1 { animation-delay: 0.15s; }
@@ -1104,6 +1186,163 @@
   border-top: 1px solid var(--line2);
 }
 
+/* Pricing (components/marketing/pricing-plans.tsx) */
+.bf .plans {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 20px;
+  align-items: stretch;
+}
+.bf .plan {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 28px;
+  border-radius: 20px;
+}
+.bf .plan.featured {
+  border-color: var(--green-ink);
+  box-shadow: 0 0 0 1px var(--green-ink);
+}
+.bf .plan-badge {
+  align-self: flex-start;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--green-soft, color-mix(in srgb, var(--green-ink) 14%, transparent));
+  color: var(--green-ink);
+}
+.bf .plan-name {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: 24px;
+  font-weight: 600;
+}
+.bf .plan-blurb,
+.bf .plan-seats {
+  margin: 0;
+  color: var(--muted);
+  font-size: 14px;
+}
+.bf .plan-price {
+  margin: 6px 0 0;
+}
+.bf .plan-price .amount {
+  font-size: 40px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+.bf .plan-price .per {
+  color: var(--muted);
+}
+.bf .plan-features {
+  list-style: none;
+  margin: 8px 0 16px;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+  font-size: 15px;
+  flex: 1;
+}
+.bf .plan-features li {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+}
+.bf .plan-features svg {
+  flex: none;
+  margin-top: 4px;
+  color: var(--green-ink);
+}
+.bf .plan .bf-btn {
+  justify-content: center;
+}
+.bf .plan-notes {
+  margin-top: 24px;
+  display: grid;
+  gap: 6px;
+  font-size: 14px;
+  color: var(--muted);
+  max-width: 760px;
+}
+.bf .plan-notes p {
+  margin: 0;
+}
+.bf .plan-placeholder {
+  color: var(--warn);
+}
+
+/* FAQ (components/marketing/faq.tsx) */
+.bf .faq {
+  margin-top: 96px;
+}
+.bf .faq-list {
+  max-width: 820px;
+  border-top: 1px solid var(--line2);
+}
+.bf .faq-item {
+  border-bottom: 1px solid var(--line2);
+  padding: 4px 0;
+}
+.bf .faq-item summary {
+  cursor: pointer;
+  list-style: none;
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 18px 0;
+  font-weight: 600;
+  font-size: 17px;
+}
+.bf .faq-item summary::-webkit-details-marker {
+  display: none;
+}
+.bf .faq-item summary::after {
+  content: "+";
+  font-size: 22px;
+  line-height: 1;
+  color: var(--muted);
+  transition: transform 0.2s;
+}
+.bf .faq-item[open] summary::after {
+  transform: rotate(45deg);
+}
+.bf .faq-item p {
+  padding: 0 0 18px;
+  max-width: 680px;
+}
+
+/* Agent audio sample (components/marketing/agent-sample.tsx) */
+.bf .sample {
+  display: grid;
+  gap: 16px;
+  padding: 28px;
+  border-radius: 20px;
+  max-width: 820px;
+}
+.bf .sample audio {
+  width: 100%;
+}
+.bf .sample-lines {
+  margin: 0;
+  display: grid;
+  gap: 8px;
+  font-size: 15px;
+}
+.bf .sample-lines dt {
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--muted);
+}
+.bf .sample-lines dd {
+  margin: 0 0 6px;
+}
+
 @supports (animation-timeline: view()) {
   .bf .sr {
     animation: rise linear both;
@@ -1115,13 +1354,6 @@
     animation-timeline: view();
     animation-range: entry 20% cover 45%;
     animation-delay: 0s;
-  }
-  /* Under GSAP ScrollSmoother (html.bf-smooth) view() timelines bind to its
-     non-scrolling wrapper; components/smooth-scroll.tsx runs the same ranges
-     on ScrollTrigger instead. */
-  .bf-smooth .bf .sr,
-  .bf-smooth .bf .track i {
-    animation: none;
   }
 }
 
@@ -1155,9 +1387,9 @@
 @keyframes stroke { to { stroke-dashoffset: 0; } }
 @keyframes float1 { from { transform: translate(0, 0) scale(1); } to { transform: translate(-180px, 140px) scale(1.15); } }
 @keyframes float2 { from { transform: translate(0, 0) scale(1); } to { transform: translate(200px, -150px) scale(1.1); } }
-@keyframes hl-fade { to { opacity: 1; } }
-@keyframes hl-in { to { opacity: 1; transform: none; filter: none; } }
-@keyframes hl-rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+@keyframes hl-in { from { transform: translateY(0.18em) rotate(3deg); } to { transform: none; } }
+@keyframes hl-rise { from { transform: translateY(10px); } to { transform: none; } }
+@keyframes nudge { from { transform: translateY(10px); } to { transform: none; } }
 @keyframes hl-glint { 0%, 55%, 100% { color: var(--green-ink); } 68% { color: var(--glint); } }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1208,6 +1440,15 @@
     grid-template-columns: minmax(0, 1fr);
     gap: 36px;
   }
+  .bf .hdesk {
+    display: none;
+  }
+  .bf .plans {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .bf .menu-btn {
+    display: inline-flex;
+  }
   .bf .track,
   .bf .navlinks {
     display: none;
@@ -1231,9 +1472,6 @@
   }
   .bf .hright .bf-btn-sm {
     padding: 0 14px;
-  }
-  .bf .brand-name {
-    display: none;
   }
   .bf .hero-sec {
     padding-top: 48px;

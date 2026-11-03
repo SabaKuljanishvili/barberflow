@@ -3,7 +3,7 @@ import { money, spokenMoney } from "./format";
 import { splitE164 } from "./phone-countries";
 import { en } from "@/i18n/dictionaries/en";
 import { ka } from "@/i18n/dictionaries/ka";
-import { appointmentSchema, bookingClientSchema, normalizePhone, parseIn, passwordSchema, salonSettingsSchema, sanitizeText, serviceSchema, signupSchema, toFormState, withDateTime, withDialCode, withTime } from "./validation";
+import { accountPasswordSchema, appointmentSchema, bookingClientSchema, normalizePhone, parseIn, passwordSchema, salonSettingsSchema, salonSettingsUpdate, sanitizeText, serviceSchema, signupSchema, toFormState, withDateTime, withDialCode, withTime } from "./validation";
 
 describe("localized errors", () => {
   it("translates custom message keys", () => {
@@ -174,8 +174,53 @@ describe("bookingClientSchema", () => {
     });
     expect(bookingClientSchema.parse({ clientName: "Giorgi", phoneNumber: "+995599123456" }).lastName).toBe("");
   });
-  it("requires a name and a valid phone", () => {
-    expect(bookingClientSchema.safeParse({ clientName: "", phoneNumber: "+995599123456" }).success).toBe(false);
+  it("requires a valid phone (needed for SMS); the name is optional", () => {
+    expect(bookingClientSchema.parse({ clientName: "", phoneNumber: "+995599123456" })).toEqual({ firstName: "", lastName: "", phoneNumber: "+995599123456" });
+    expect(bookingClientSchema.parse({ phoneNumber: "+995599123456" }).firstName).toBe("");
     expect(bookingClientSchema.safeParse({ clientName: "Nino", phoneNumber: "123" }).success).toBe(false);
+    expect(bookingClientSchema.safeParse({ clientName: "Nino", phoneNumber: "" }).success).toBe(false);
+  });
+});
+
+describe("accountPasswordSchema", () => {
+  const ok = { currentPassword: "OldPassw0rd!", password: "NewPassw0rd1", confirm: "NewPassw0rd1" };
+  it("accepts a strong new password with the current one", () => {
+    expect(accountPasswordSchema.safeParse(ok).success).toBe(true);
+  });
+  it("requires the current password", () => {
+    const r = accountPasswordSchema.safeParse({ ...ok, currentPassword: "" });
+    expect(r.success).toBe(false);
+    expect(r.error?.issues[0].path).toEqual(["currentPassword"]);
+  });
+  it("applies the signup strength rules", () => {
+    expect(accountPasswordSchema.safeParse({ ...ok, password: "short", confirm: "short" }).success).toBe(false);
+  });
+  it("rejects mismatched confirmation and reusing the current password", () => {
+    expect(accountPasswordSchema.safeParse({ ...ok, confirm: "Other1passwd" }).error?.issues[0].message).toBe("passwordsMatch");
+    const same = accountPasswordSchema.safeParse({ ...ok, currentPassword: ok.password });
+    expect(same.error?.issues.map((i) => i.message)).toContain("passwordSame");
+  });
+  it("has translations for every custom message", () => {
+    expect(en.validation.passwordSame).toBeTruthy();
+    expect(ka.validation.passwordSame).toBeTruthy();
+  });
+});
+
+describe("closed dates in settings", () => {
+  const valid = { name: "Ruiz Cuts", timezone: "Asia/Tbilisi", opensAt: "09:00", closesAt: "18:00", workingDays: ["1"], locale: "ka" };
+  it("drops blanks, dedupes and sorts", () => {
+    const r = salonSettingsSchema.parse({ ...valid, closedDates: ["2026-12-31", "", "2026-01-01", "2026-12-31"] });
+    expect(salonSettingsUpdate(r).closed_dates).toEqual(["2026-01-01", "2026-12-31"]);
+    expect(salonSettingsUpdate(salonSettingsSchema.parse(valid)).closed_dates).toEqual([]);
+  });
+  it("rejects a malformed date", () => {
+    expect(salonSettingsSchema.safeParse({ ...valid, closedDates: ["31.12.2026"] }).success).toBe(false);
+  });
+});
+
+describe("closed dates must be real dates", () => {
+  const valid = { name: "Ruiz Cuts", timezone: "Asia/Tbilisi", opensAt: "09:00", closesAt: "18:00", workingDays: ["1"], locale: "ka" };
+  it.each(["2026-13-45", "2026-02-30", "2026-04-31"])("rejects %s", (d) => {
+    expect(salonSettingsSchema.safeParse({ ...valid, closedDates: [d] }).success).toBe(false);
   });
 });

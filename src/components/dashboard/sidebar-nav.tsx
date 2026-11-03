@@ -2,10 +2,10 @@
 
 import Link, { useLinkStatus } from "next/link";
 import { usePathname } from "next/navigation";
-import { AudioLines, CalendarDays, LayoutGrid, Scissors, Settings, UserRound, Users, Contact } from "lucide-react";
+import { AudioLines, CalendarDays, Contact, CreditCard, LayoutGrid, Scissors, Settings, UserRound, Users } from "lucide-react";
 import { useI18n } from "@/i18n/client";
 
-const items = [
+export const NAV_ITEMS = [
   { href: "/dashboard", key: "overview", icon: LayoutGrid, managerOnly: false },
   { href: "/dashboard/appointments", key: "appointments", icon: CalendarDays, managerOnly: false },
   { href: "/dashboard/clients", key: "clients", icon: Contact, managerOnly: false },
@@ -13,6 +13,7 @@ const items = [
   { href: "/dashboard/services", key: "services", icon: Scissors, managerOnly: true },
   { href: "/dashboard/team", key: "team", icon: Users, managerOnly: true },
   { href: "/dashboard/settings", key: "settings", icon: Settings, managerOnly: true },
+  { href: "/dashboard/billing", key: "billing", icon: CreditCard, managerOnly: true },
   { href: "/dashboard/account", key: "account", icon: UserRound, managerOnly: false },
 ] as const;
 
@@ -22,7 +23,7 @@ function PendingDot() {
   return <span aria-hidden className={`ml-auto size-1.5 rounded-full bg-current transition-opacity ${pending ? "animate-pulse opacity-100" : "opacity-0"}`} />;
 }
 
-export type NavLabels = Record<(typeof items)[number]["key"], string>;
+export type NavLabels = Record<(typeof NAV_ITEMS)[number]["key"], string>;
 
 export function SidebarNav({ isManager, labels }: { isManager: boolean; labels: NavLabels }) {
   const pathname = usePathname();
@@ -30,7 +31,7 @@ export function SidebarNav({ isManager, labels }: { isManager: boolean; labels: 
   return (
     <nav aria-label={t.dashboardNav}>
       <ul className="flex gap-1 overflow-x-auto lg:flex-col lg:overflow-visible">
-        {items
+        {NAV_ITEMS
           .filter((i) => isManager || !i.managerOnly)
           .map(({ href, key, icon: Icon }) => {
             const active = href === "/dashboard" ? pathname === href : pathname.startsWith(href);

@@ -41,6 +41,10 @@ export function resetRateLimits() {
 export const RATE_LIMIT_RULES: { prefix: string; limit: number; windowMs: number }[] = [
   { prefix: "/login", limit: 10, windowMs: 60_000 },
   { prefix: "/signup", limit: 5, windowMs: 60_000 },
+  { prefix: "/forgot-password", limit: 5, windowMs: 60_000 },
+  { prefix: "/reset-password", limit: 10, windowMs: 60_000 },
+  { prefix: "/contact", limit: 5, windowMs: 60_000 },
+  { prefix: "/en/contact", limit: 5, windowMs: 60_000 },
   { prefix: "/auth", limit: 10, windowMs: 60_000 },
   // Twilio fetches every spoken sentence from its own egress IPs, so audio
   // needs headroom; URLs are HMAC-signed, so this is not the main defence.

@@ -1,5 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
+import { DEFAULT_LOCALE, LOCALE_COOKIE } from "@/i18n/config";
+import { LOCALE_HEADER, isMarketingPath, localizedPath, splitLocalePath } from "@/i18n/routing";
 import { RATE_LIMIT_RULES, rateLimit } from "@/lib/rate-limit";
 
 const isDev = process.env.NODE_ENV !== "production";
@@ -46,11 +48,34 @@ export async function proxy(request: NextRequest) {
   // Webhooks and cron authenticate themselves (Twilio signature / bearer secret).
   if (pathname.startsWith("/api")) return NextResponse.next();
 
+  // Marketing pages carry their language in the URL: "/" is Georgian,
+  // "/en/..." English (rewritten onto the same pages). "/ka/..." and
+  // prefixed non-marketing paths redirect to their one canonical URL.
+  const prefixed = splitLocalePath(pathname);
+  if (prefixed && (prefixed.locale === DEFAULT_LOCALE || !isMarketingPath(prefixed.path))) {
+    const target = new URL(localizedPath(prefixed.locale, prefixed.path) + request.nextUrl.search, request.url);
+    return NextResponse.redirect(target, 308);
+  }
+  const pagePath = prefixed?.path ?? pathname;
+  const urlLocale = isMarketingPath(pagePath) ? (prefixed?.locale ?? DEFAULT_LOCALE) : null;
+  // Someone who chose English earlier gets the English URL (crawlers have no cookie).
+  if (urlLocale === DEFAULT_LOCALE && request.method === "GET" && request.cookies.get(LOCALE_COOKIE)?.value === "en") {
+    return NextResponse.redirect(new URL(localizedPath("en", pathname) + request.nextUrl.search, request.url), 307);
+  }
+
   const nonce = Buffer.from(crypto.randomUUID()).toString("base64");
   const csp = buildCsp(nonce);
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set("x-nonce", nonce);
   requestHeaders.set("Content-Security-Policy", csp);
+  requestHeaders.delete(LOCALE_HEADER);
+  if (urlLocale) requestHeaders.set(LOCALE_HEADER, urlLocale);
+
+  if (prefixed) {
+    const rewritten = NextResponse.rewrite(new URL(pagePath + request.nextUrl.search, request.url), { request: { headers: requestHeaders } });
+    rewritten.headers.set("Content-Security-Policy", csp);
+    return rewritten;
+  }
 
   let response = NextResponse.next({ request: { headers: requestHeaders } });
 
@@ -58,8 +83,11 @@ export async function proxy(request: NextRequest) {
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   const needsAuth = pathname.startsWith("/dashboard");
   const isAuthPage = pathname === "/login" || pathname === "/signup";
+  // The recovery/invite session must be refreshed here too, but a signed-in
+  // user is not bounced away from it.
+  const isResetPage = pathname === "/reset-password";
 
-  if (url && key && (needsAuth || isAuthPage)) {
+  if (url && key && (needsAuth || isAuthPage || isResetPage)) {
     const supabase = createServerClient(url, key, {
       cookies: {
         getAll: () => request.cookies.getAll(),
@@ -93,6 +121,10 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
+    // English marketing pages exist only through the rewrite above, so their
+    // prefetch (RSC) requests must reach the proxy too, or they resolve to 404.
+    "/en",
+    "/en/:path*",
     {
       source: "/((?!_next/static|_next/image|favicon.ico|icon|apple-icon|brand/|opengraph-image|robots.txt|sitemap.xml|llms.txt).*)",
       missing: [

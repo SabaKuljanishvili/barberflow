@@ -1,6 +1,7 @@
 import { z } from "zod";
 import type { Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/dictionaries/en";
+import { isIsoDate } from "./calendar";
 import { phoneCountry } from "./phone-countries";
 
 // Custom messages are keys of Dictionary["validation"]; toFormState translates
@@ -131,18 +132,19 @@ export const appointmentSchema = z.object({
   localTime: z.string().regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/, m("dateTime")),
 });
 
-// The booking form takes a name and phone; the server matches the client by
-// phone or creates one. First word is the first name, the rest the last name.
+// The booking form takes a phone (required: confirmations go by SMS) and an
+// optional name; the server matches the client by phone or creates one.
+// First word is the first name, the rest the last name.
 export const bookingClientSchema = z
-  .object({ clientName: text(1, 120), phoneNumber: phoneSchema })
+  .object({ clientName: z.string().optional().default("").pipe(text(0, 120)), phoneNumber: phoneSchema })
   .transform(({ clientName, phoneNumber }) => {
-    const [first, ...rest] = clientName.split(" ");
+    const [first = "", ...rest] = clientName ? clientName.split(" ") : [];
     return { firstName: first.slice(0, 60), lastName: rest.join(" ").slice(0, 60), phoneNumber };
   });
 
 export const statusSchema = z.object({
   id: z.uuid(),
-  status: z.enum(["pending", "confirmed", "cancelled", "completed"]),
+  status: z.enum(["pending", "confirmed", "cancelled", "completed", "no_show"]),
 });
 
 export const inviteSchema = z.object({
@@ -162,6 +164,14 @@ export const salonSettingsSchema = z
     closesAt: timeOfDay,
     workingDays: z.array(z.coerce.number().int().min(1).max(7)).min(1, m("workingDays")),
     voiceAgentEnabled: z.literal("on").optional(),
+    autoComplete: z.literal("on").optional(),
+    // Holidays: salon-local dates; blank rows from the form are dropped.
+    closedDates: z
+      .array(z.string())
+      .optional()
+      .transform((list) => (list ?? []).filter((d) => d.trim() !== ""))
+      // Real calendar dates only: "2026-02-30" would fail the date[] cast later.
+      .pipe(z.array(z.string().refine(isIsoDate, m("dateTime"))).max(100)),
     locale: z.enum(["ka", "en"], m("language")),
   })
   .refine((v) => v.closesAt > v.opensAt, { path: ["closesAt"], message: m("closesAfterOpens") });
@@ -179,13 +189,25 @@ export function salonSettingsUpdate(v: z.output<typeof salonSettingsSchema>) {
     closes_at: v.closesAt,
     working_days: [...new Set(v.workingDays)].sort(),
     voice_agent_enabled: v.voiceAgentEnabled === "on",
+    auto_complete_appointments: v.autoComplete === "on",
     locale: v.locale,
+    closed_dates: [...new Set(v.closedDates)].sort(),
   };
 }
 
 export const passwordChangeSchema = z
   .object({ password: passwordSchema, confirm: z.string() })
   .refine((v) => v.password === v.confirm, { path: ["confirm"], message: m("passwordsMatch") });
+
+/** Signed-in password change: the current password is re-checked server-side first. */
+export const accountPasswordSchema = z
+  .object({ currentPassword: z.string().min(1, m("passwordRequired")).max(72), password: passwordSchema, confirm: z.string() })
+  .refine((v) => v.password === v.confirm, { path: ["confirm"], message: m("passwordsMatch") })
+  .refine((v) => v.password !== v.currentPassword, { path: ["password"], message: m("passwordSame") });
+
+export const forgotPasswordSchema = z.object({ email: z.email(m("email")).max(254) });
+
+export const emailChangeSchema = z.object({ email: z.email(m("email")).max(254) });
 
 export function isValidTimeZone(tz: string): boolean {
   try {

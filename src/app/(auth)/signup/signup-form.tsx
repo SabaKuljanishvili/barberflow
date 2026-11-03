@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { ActionForm, PendingButton, useFieldErrors } from "@/components/ui/action-form";
 import { Field } from "@/components/ui/field";
+import { PasswordField } from "@/components/ui/password-field";
 import { useI18n } from "@/i18n/client";
 import { signup } from "../actions";
 
@@ -12,26 +13,29 @@ function TermsCheckbox() {
   return (
     <div>
       <div className="flex items-start gap-3">
+        {/* aria-labelledby covers the whole sentence, links included, so the
+            accessible name is "I agree to the Terms ... Privacy Policy". */}
         <input
           id="acceptTerms"
           name="acceptTerms"
           type="checkbox"
           required
           className="mt-1 size-4 rounded accent-brand"
+          aria-labelledby="acceptTerms-label"
           aria-invalid={errors ? true : undefined}
           aria-describedby={errors ? "acceptTerms-error" : undefined}
         />
-        <label htmlFor="acceptTerms" className="text-sm text-muted">
-          {t.signup.agree}{" "}
+        <p id="acceptTerms-label" className="text-sm text-muted">
+          <label htmlFor="acceptTerms">{t.signup.agree}</label>{" "}
           <Link href="/legal/terms" className="font-medium text-accent underline underline-offset-2">
             {t.signup.terms}
           </Link>{" "}
-          {t.signup.andRead}{" "}
+          <label htmlFor="acceptTerms">{t.signup.andRead}</label>{" "}
           <Link href="/legal/privacy" className="font-medium text-accent underline underline-offset-2">
             {t.signup.privacy}
           </Link>
           .
-        </label>
+        </p>
       </div>
       {errors && (
         <p id="acceptTerms-error" className="field-error">
@@ -49,15 +53,7 @@ export function SignupForm() {
       <Field label={t.signup.fullName} name="fullName" autoComplete="name" required maxLength={120} />
       <Field label={t.signup.shopName} name="salonName" autoComplete="organization" required maxLength={120} />
       <Field label={t.signup.email} name="email" type="email" autoComplete="email" required />
-      <Field
-        label={t.signup.password}
-        name="password"
-        type="password"
-        autoComplete="new-password"
-        required
-        minLength={10}
-        hint={t.signup.passwordHint}
-      />
+      <PasswordField label={t.signup.password} name="password" autoComplete="new-password" required minLength={10} maxLength={72} hint={t.signup.passwordHint} />
       <TermsCheckbox />
       <PendingButton pendingLabel={t.signup.submitting} className="btn-primary w-full">
         {t.signup.submit}

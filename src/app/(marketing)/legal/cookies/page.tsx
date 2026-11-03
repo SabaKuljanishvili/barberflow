@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
 import { LegalPage } from "@/components/marketing/legal-page";
 import { LOCALE_COOKIE } from "@/i18n/config";
-import { getI18n } from "@/i18n/server";
+import { getI18n, pageAlternates } from "@/i18n/server";
 
 export async function generateMetadata(): Promise<Metadata> {
   const { t } = await getI18n();
   const page = t.legal.pages.cookies;
-  return { title: page.title, description: page.description, alternates: { canonical: "/legal/cookies" } };
+  return { title: page.title, description: page.description, alternates: await pageAlternates("/legal/cookies") };
 }
 
 const content = {
@@ -17,7 +17,7 @@ const content = {
     columns: ["Name", "Purpose", "Duration"],
     cookies: [
       { name: "sb-*-auth-token", purpose: "Keeps staff signed in to the dashboard.", duration: "Session, refreshed while active" },
-      { name: "bf_cookie_consent", purpose: "Remembers your answer to the cookie notice.", duration: "180 days" },
+      { name: "bf_cookie_consent", purpose: "Remembers that you closed the cookie notice.", duration: "1 year" },
       { name: LOCALE_COOKIE, purpose: "Remembers the language you chose (Georgian or English).", duration: "1 year" },
     ],
     choicesHeading: "Your choices",
@@ -31,7 +31,7 @@ const content = {
     columns: ["დასახელება", "დანიშნულება", "ვადა"],
     cookies: [
       { name: "sb-*-auth-token", purpose: "თანამშრომლებს მართვის პანელში შესულს ტოვებს.", duration: "სესია, განახლდება აქტიურობისას" },
-      { name: "bf_cookie_consent", purpose: "იმახსოვრებს თქვენს პასუხს cookie-ების შეტყობინებაზე.", duration: "180 დღე" },
+      { name: "bf_cookie_consent", purpose: "იმახსოვრებს, რომ cookie-ების შეტყობინება დახურეთ.", duration: "1 წელი" },
       { name: LOCALE_COOKIE, purpose: "იმახსოვრებს არჩეულ ენას (ქართული ან ინგლისური).", duration: "1 წელი" },
     ],
     choicesHeading: "თქვენი არჩევანი",

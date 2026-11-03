@@ -1,5 +1,7 @@
 import { Fragment } from "react";
 import type { Dictionary } from "@/i18n/dictionaries/en";
+import { useI18n } from "@/i18n/client";
+import { dateLabel, localIsoDate } from "./call-stream-data";
 import { PhoneIcon } from "./phone-icon";
 
 export type SceneText = Dictionary["home"]["scenes"];
@@ -178,7 +180,7 @@ function IsolationScene({ t }: { t: SceneText }) {
               <polyline points="9 12 11 14 15 10" />
             </svg>
           </span>
-          <span>RLS</span>
+          <span>{t.isolated}</span>
         </div>
         {db(t.salonB, [72, 88, 60, 80, 68], "s2", "1.4s")}
       </div>
@@ -193,16 +195,22 @@ function IsolationScene({ t }: { t: SceneText }) {
   );
 }
 
+// Days before today for each archived row: the first two are older than a
+// month (they sink into the archive), the last two are recent and stay.
+const ARCHIVE_AGES = [-42, -37, -4, -3];
+
 function ArchiveScene({ t }: { t: SceneText }) {
-  // The two oldest rows sink into the archive; the rest rise in.
+  const { locale } = useI18n();
+  // Only mounted on the client (once the archive item is active).
+  const today = localIsoDate();
   const cls = ["go", "go", "r s1", "r s2"];
   const delays = ["0.9s", "1.5s"];
   return (
     <div className="scene">
-      {t.archived.map((a, i) => (
-        <div key={a.title + a.date} className={`arch ${cls[i]}`} style={delays[i] ? { animationDelay: delays[i] } : undefined}>
-          <span>{a.title}</span>
-          <span className="dt">{a.date}</span>
+      {t.archived.map((title, i) => (
+        <div key={title} className={`arch ${cls[i]}`} style={delays[i] ? { animationDelay: delays[i] } : undefined}>
+          <span>{title}</span>
+          <span className="dt">{dateLabel(today, ARCHIVE_AGES[i], locale)}</span>
         </div>
       ))}
       <div className="tray r s3">

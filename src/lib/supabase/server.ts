@@ -25,6 +25,22 @@ export async function createSupabaseServerClient() {
 }
 
 /**
+ * Checks an email/password pair without touching the request's session
+ * cookies (anon key, nothing persisted). Used to re-authenticate before a
+ * password change; the throwaway session is signed out right away.
+ */
+export async function verifyPassword(email: string, password: string): Promise<boolean> {
+  const env = publicEnv();
+  const probe = createClient<Database>(env.NEXT_PUBLIC_SUPABASE_URL, env.NEXT_PUBLIC_SUPABASE_ANON_KEY, {
+    auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
+  });
+  const { error } = await probe.auth.signInWithPassword({ email, password });
+  if (error) return false;
+  await probe.auth.signOut({ scope: "local" });
+  return true;
+}
+
+/**
  * Service-role client. Bypasses RLS, so every query MUST scope by salon_id
  * explicitly. Only for webhooks, cron jobs and manager-authorized admin tasks.
  */

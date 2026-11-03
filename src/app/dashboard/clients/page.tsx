@@ -3,6 +3,7 @@ import Link from "next/link";
 import { CalendarPlus } from "lucide-react";
 import { Breadcrumbs } from "@/components/breadcrumbs";
 import { ActionForm, PendingButton } from "@/components/ui/action-form";
+import { AutoSubmitForm } from "@/components/ui/auto-submit-form";
 import { Field } from "@/components/ui/field";
 import { PhoneField } from "@/components/ui/phone-field";
 import { requireUser } from "@/lib/auth";
@@ -23,19 +24,40 @@ function searchTerm(raw: string | undefined): string {
   return (raw ?? "").replace(/[^\p{L}\p{N}\s+'-]/gu, "").trim().slice(0, 60);
 }
 
-export default async function ClientsPage({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
+const PAGE_SIZE = 25;
+
+export default async function ClientsPage({ searchParams }: { searchParams: Promise<{ q?: string; sort?: string; page?: string }> }) {
   const { salon } = await requireUser();
   const { locale, t } = await getI18n();
   const p = t.dashboard.clients;
-  const q = searchTerm((await searchParams).q);
+  const sp = await searchParams;
+  const q = searchTerm(sp.q);
+  const sort = sp.sort === "name" ? "name" : "recent";
+  const page = Math.max(1, Math.min(1000, Number.parseInt(sp.page ?? "1", 10) || 1));
   const supabase = await createSupabaseServerClient();
 
-  let query = supabase.from("clients").select("*, appointments(appointment_time, status)").order("created_at", { ascending: false }).limit(100);
+  let query = supabase.from("clients").select("*, appointments(appointment_time, status)");
+  query =
+    sort === "name"
+      ? query.order("first_name").order("last_name").order("created_at", { ascending: false })
+      : query.order("created_at", { ascending: false });
+  // One extra row tells whether a next page exists.
+  query = query.range((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
   if (q) {
     const like = `%${q}%`;
     query = query.or(`first_name.ilike.${like},last_name.ilike.${like},phone_number.ilike.${like}`);
   }
-  const { data: clients } = await query;
+  const { data: found } = await query;
+  const hasNext = (found?.length ?? 0) > PAGE_SIZE;
+  const clients = found?.slice(0, PAGE_SIZE);
+  const pageHref = (n: number) => {
+    const params = new URLSearchParams();
+    if (q) params.set("q", q);
+    if (sort !== "recent") params.set("sort", sort);
+    if (n > 1) params.set("page", String(n));
+    const qs = params.toString();
+    return qs ? `/dashboard/clients?${qs}` : "/dashboard/clients";
+  };
   const now = new Date().getTime();
   const day = (iso: string) => formatInZone(iso, salon.timezone, { timeStyle: undefined }, INTL_LOCALE[locale]);
 
@@ -56,18 +78,32 @@ export default async function ClientsPage({ searchParams }: { searchParams: Prom
 
       <div className="grid gap-6 xl:grid-cols-3">
         <section aria-labelledby="list" className="card xl:col-span-2">
-          <h2 id="list" className="text-lg font-semibold">
-            {q ? fmt(p.results, { q }) : p.recent}
-          </h2>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h2 id="list" className="text-lg font-semibold">
+              {q ? fmt(p.results, { q }) : p.recent}
+            </h2>
+            <AutoSubmitForm label={p.sort} submitLabel={p.sort} className="flex items-center gap-2">
+              {q && <input type="hidden" name="q" value={q} />}
+              <label htmlFor="sort" className="sr-only">
+                {p.sort}
+              </label>
+              <select id="sort" name="sort" defaultValue={sort} className="input w-auto py-1.5">
+                <option value="recent">{p.sortRecent}</option>
+                <option value="name">{p.sortName}</option>
+              </select>
+            </AutoSubmitForm>
+          </div>
           {clients?.length ? (
             <ul className="mt-4 divide-y divide-line">
               {clients.map((c) => {
                 const h = history(c.appointments ?? []);
-                const name = clientName(c, t.dashboard.unknownClient);
+                const name = clientName(c, t.dashboard.unknownClient, t.dashboard.unnamedClient);
                 return (
                   <li key={c.id} className="flex flex-wrap items-center justify-between gap-3 py-3">
                     <div className="min-w-0">
-                      <p className="font-medium">{name}</p>
+                      <Link href={`/dashboard/clients/${c.id}`} className={`font-medium hover:text-accent ${c.first_name || c.last_name ? "" : "italic text-muted"}`}>
+                        {name}
+                      </Link>
                       <p className="text-sm text-muted">{c.phone_number}</p>
                     </div>
                     <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted">
@@ -93,6 +129,25 @@ export default async function ClientsPage({ searchParams }: { searchParams: Prom
             </ul>
           ) : (
             <p className="mt-4 text-sm text-muted">{q ? p.noMatch : p.empty}</p>
+          )}
+          {(page > 1 || hasNext) && (
+            <nav aria-label={fmt(p.pageOf, { n: page })} className="mt-4 flex items-center justify-between gap-3 border-t border-line pt-4 text-sm">
+              {page > 1 ? (
+                <Link href={pageHref(page - 1)} className="btn-secondary">
+                  {p.prevPage}
+                </Link>
+              ) : (
+                <span />
+              )}
+              <span className="text-muted">{fmt(p.pageOf, { n: page })}</span>
+              {hasNext ? (
+                <Link href={pageHref(page + 1)} className="btn-secondary">
+                  {p.nextPage}
+                </Link>
+              ) : (
+                <span />
+              )}
+            </nav>
           )}
         </section>
 

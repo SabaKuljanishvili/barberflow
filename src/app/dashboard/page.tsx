@@ -5,6 +5,7 @@ import { requireUser } from "@/lib/auth";
 import { clientName, money } from "@/lib/format";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { formatInZone, zonedDayBounds } from "@/lib/time";
+import { ReviewCard, type ReviewItem } from "@/components/dashboard/review-card";
 import { StatusBadge } from "@/components/dashboard/status-badge";
 import { INTL_LOCALE, fmt } from "@/i18n/config";
 import { getI18n } from "@/i18n/server";
@@ -26,7 +27,7 @@ export default async function OverviewPage({ searchParams }: { searchParams: Pro
   const weekStart = new Date(today.start.getTime() - 6 * 86_400_000);
   const monthStart = new Date(today.start.getTime() - 29 * 86_400_000);
 
-  const [todayAppts, week, newClients, calls] = await Promise.all([
+  const [todayAppts, week, newClients, calls, review, missed] = await Promise.all([
     supabase
       .from("appointments")
       .select("id, appointment_time, status, staff_id, clients(first_name, last_name, phone_number), services(name), profiles(full_name)")
@@ -42,7 +43,31 @@ export default async function OverviewPage({ searchParams }: { searchParams: Pro
       .neq("status", "cancelled"),
     supabase.from("clients").select("id", { count: "exact", head: true }).gte("created_at", monthStart.toISOString()),
     supabase.from("call_logs").select("outcome").gte("created_at", weekStart.toISOString()),
+    // RLS already limits barbers to what they may update; the action re-checks.
+    supabase
+      .from("appointments")
+      .select("id, appointment_time, clients(first_name, last_name, phone_number), services(name)")
+      .in("status", ["pending", "confirmed"])
+      .lt("ends_at", now.toISOString())
+      .order("appointment_time", { ascending: false })
+      .limit(8),
+    supabase
+      .from("call_logs")
+      .select("id, from_number, outcome, created_at, call_status")
+      .neq("outcome", "booked")
+      .gte("created_at", weekStart.toISOString())
+      .order("created_at", { ascending: false })
+      .limit(6),
   ]);
+  // Web voice sessions are the staff testing; only real phone calls count here.
+  const missedCalls = (missed.data ?? []).filter((c) => c.call_status !== "web");
+  const reviewItems: ReviewItem[] = (review.data ?? []).map((a) => ({
+    id: a.id,
+    client: clientName(a.clients, t.dashboard.unknownClient),
+    when: formatInZone(a.appointment_time, salon.timezone, {}, intl),
+    whenIso: a.appointment_time,
+    service: a.services?.name ?? "",
+  }));
 
   const todayList = todayAppts.data ?? [];
   const weekRows = week.data ?? [];
@@ -76,20 +101,24 @@ export default async function OverviewPage({ searchParams }: { searchParams: Pro
       <section aria-label={o.keyNumbers} className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <Stat
           highlight
+          href="/dashboard/appointments"
           icon={CalendarDays}
           label={o.apptsToday}
           value={String(todayList.length)}
           note={fmt(o.awaitingCount, { count: todayList.filter((a) => a.status === "pending").length })}
         />
-        <Stat icon={Banknote} label={o.revenue} value={money(revenue)} note={o.revenueNote} />
+        <Stat href="/dashboard/appointments?range=past&status=completed" icon={Banknote} label={o.revenue} value={money(revenue)} note={o.revenueNote} />
         <Stat
+          href="/dashboard/voice"
           icon={PhoneIncoming}
           label={o.calls}
           value={String(callRows.length)}
           note={fmt(o.callsNote, { count: booked })}
         />
-        <Stat icon={UserPlus} label={o.newClients} value={String(newClients.count ?? 0)} note={o.newClientsNote} />
+        <Stat href="/dashboard/clients" icon={UserPlus} label={o.newClients} value={String(newClients.count ?? 0)} note={o.newClientsNote} />
       </section>
+
+      <ReviewCard items={reviewItems} labels={o} />
 
       <div className="grid gap-6 xl:grid-cols-3">
         <section aria-labelledby="today" className="card xl:col-span-2">
@@ -120,6 +149,32 @@ export default async function OverviewPage({ searchParams }: { searchParams: Pro
             </ul>
           ) : (
             <p className="mt-4 text-sm text-muted">{o.noneToday}</p>
+          )}
+        </section>
+
+        <section aria-labelledby="missed" className="card">
+          <h2 id="missed" className="text-lg font-semibold">
+            {o.missed}
+          </h2>
+          <p className="text-sm text-muted">{o.missedNote}</p>
+          {missedCalls.length ? (
+            <ul className="mt-4 divide-y divide-line">
+              {missedCalls.map((c) => (
+                <li key={c.id} className="flex flex-wrap items-center justify-between gap-2 py-2.5">
+                  <div className="min-w-0">
+                    <p className="font-medium tabular-nums">{c.from_number}</p>
+                    <p className="text-xs text-muted">
+                      {formatInZone(c.created_at, salon.timezone, {}, intl)} · {o.outcomes[c.outcome]}
+                    </p>
+                  </div>
+                  <a href={`tel:${c.from_number}`} className="btn-secondary py-1.5 text-sm" aria-label={fmt(o.callBackLabel, { number: c.from_number })}>
+                    {o.callBack}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="mt-4 text-sm text-muted">{o.noMissed}</p>
           )}
         </section>
 
@@ -162,7 +217,9 @@ function Stat({
   value,
   note,
   highlight = false,
+  href,
 }: {
+  href: string;
   icon: React.ComponentType<{ className?: string; "aria-hidden"?: boolean }>;
   label: string;
   value: string;
@@ -170,7 +227,10 @@ function Stat({
   highlight?: boolean;
 }) {
   return (
-    <div className={highlight ? "rounded-3xl bg-brand p-6 text-on-brand shadow-soft" : "card"}>
+    <Link
+      href={href}
+      className={`block transition-transform hover:-translate-y-0.5 focus-visible:-translate-y-0.5 ${highlight ? "rounded-3xl bg-brand p-6 text-on-brand shadow-soft" : "card hover:border-accent"}`}
+    >
       <div className="flex items-center justify-between gap-3">
         <p className={`text-sm font-medium ${highlight ? "text-on-brand/90" : "text-muted"}`}>{label}</p>
         <span
@@ -181,6 +241,6 @@ function Stat({
       </div>
       <p className="mt-3 text-3xl font-bold tracking-tight tabular-nums">{value}</p>
       <p className={`mt-1 text-sm ${highlight ? "text-on-brand/90" : "text-muted"}`}>{note}</p>
-    </div>
+    </Link>
   );
 }

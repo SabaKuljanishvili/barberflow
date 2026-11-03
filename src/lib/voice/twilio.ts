@@ -1,14 +1,12 @@
 import "server-only";
 import twilio from "twilio";
-import { serverEnv } from "@/lib/env.server";
+import { parseTwilioEnv } from "@/lib/env-sections";
 
 export type TwilioParams = Record<string, string>;
 
-/** Twilio credentials, or null when phone calls and SMS are not set up. */
+/** Twilio credentials, or null when phone calls and SMS are not (validly) set up. Never throws. */
 export function twilioConfig() {
-  const env = serverEnv();
-  if (!env.TWILIO_ACCOUNT_SID || !env.TWILIO_AUTH_TOKEN || !env.TWILIO_WEBHOOK_BASE_URL) return null;
-  return { accountSid: env.TWILIO_ACCOUNT_SID, authToken: env.TWILIO_AUTH_TOKEN, baseUrl: env.TWILIO_WEBHOOK_BASE_URL };
+  return parseTwilioEnv(process.env);
 }
 
 function requireTwilio() {

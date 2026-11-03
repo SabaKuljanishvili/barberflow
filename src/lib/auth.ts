@@ -24,7 +24,8 @@ export const getSession = cache(async (): Promise<SessionContext | null> => {
   if (!userId) return null;
 
   const { data: row } = await supabase.from("profiles").select("*, salons(*)").eq("id", userId).maybeSingle();
-  if (!row?.salons) return null;
+  // Deactivated members have no access (RLS agrees: current_salon_id()).
+  if (!row?.salons || !row.active) return null;
 
   const { salons: salon, ...profile } = row;
   return { userId, profile, salon, isManager: profile.role === "manager" };
@@ -32,7 +33,8 @@ export const getSession = cache(async (): Promise<SessionContext | null> => {
 
 export async function requireUser(): Promise<SessionContext> {
   const session = await getSession();
-  if (!session) redirect("/login");
+  // A login without an active profile is signed out there (no redirect loop).
+  if (!session) redirect("/auth/ended");
   return session;
 }
 

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { getI18n } from "@/i18n/server";
 import { AiStatusCard } from "@/components/dashboard/ai-status-card";
+import { MobileTabBar } from "@/components/dashboard/mobile-tab-bar";
 import { SidebarNav } from "@/components/dashboard/sidebar-nav";
 import { TopHeader } from "@/components/dashboard/top-header";
 import { Logo } from "@/components/logo";
@@ -41,8 +42,8 @@ export default async function DashboardLayout({ children }: { children: React.Re
   ]);
 
   return (
-    <div className="mx-auto flex min-h-dvh max-w-[1600px] flex-col gap-4 p-4 lg:flex-row lg:gap-6 lg:p-6">
-      <aside className="flex flex-col gap-4 lg:sticky lg:top-6 lg:h-[calc(100dvh-3rem)] lg:w-64 lg:shrink-0">
+    <div className="mx-auto flex min-h-dvh max-w-[1600px] flex-col gap-4 p-4 pb-24 lg:flex-row lg:gap-6 lg:p-6">
+      <aside className="hidden flex-col gap-4 lg:flex lg:sticky lg:top-6 lg:h-[calc(100dvh-3rem)] lg:w-64 lg:shrink-0">
         <div className="flex flex-1 flex-col gap-6 rounded-3xl border border-line bg-surface p-4 shadow-soft">
           <div className="px-2 pt-1">
             <Logo href="/dashboard" />
@@ -76,6 +77,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
           {children}
         </main>
       </div>
+      <MobileTabBar isManager={isManager} labels={t.dashboard.nav} moreLabel={t.dashboard.more} closeLabel={t.nav.closeMenu} />
     </div>
   );
 }

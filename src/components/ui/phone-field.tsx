@@ -3,7 +3,7 @@
 import { useMemo, type InputHTMLAttributes } from "react";
 import { useI18n } from "@/i18n/client";
 import { INTL_LOCALE, fmt } from "@/i18n/config";
-import { PHONE_COUNTRIES, flagEmoji, splitE164 } from "@/lib/phone-countries";
+import { PHONE_COUNTRIES, splitE164 } from "@/lib/phone-countries";
 import { useFieldErrors } from "./action-form";
 
 /**
@@ -51,7 +51,7 @@ export function PhoneField({
           {PHONE_COUNTRIES.map((c) => (
             // Browser and server ICU can name a region differently.
             <option key={c.iso} value={c.iso} title={regionNames?.of(c.iso) ?? c.name} suppressHydrationWarning>
-              {flagEmoji(c.iso)} +{c.dial} {regionNames?.of(c.iso) ?? c.name}
+              +{c.dial} {regionNames?.of(c.iso) ?? c.name}
             </option>
           ))}
         </select>

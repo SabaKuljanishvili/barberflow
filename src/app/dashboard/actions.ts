@@ -1,22 +1,29 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { z } from "zod";
 import { fmt, type Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/dictionaries/en";
 import { getI18n } from "@/i18n/server";
 import { getSession, type SessionContext } from "@/lib/auth";
-import { siteUrl } from "@/lib/env";
-import { createSupabaseAdminClient, createSupabaseServerClient } from "@/lib/supabase/server";
+import { appUrl } from "@/lib/env";
+import { rateLimit } from "@/lib/rate-limit";
+import { createSupabaseAdminClient, createSupabaseServerClient, verifyPassword } from "@/lib/supabase/server";
 import { freeBarbersFor } from "@/lib/booking";
-import { parseLocalDateTime, workingHoursProblem, zonedDayBounds } from "@/lib/time";
+import { lookupTwilioNumber } from "@/lib/voice/twilio-numbers";
+import { dayAvailability, salonHours } from "@/lib/availability";
+import { canReschedule, isBookableBarber, isBookableService } from "@/lib/booking-rules";
+import { isIsoDate } from "@/lib/calendar";
+import { parseLocalDateTime, workingHoursProblem, zonedDayBounds, zonedToUtc } from "@/lib/time";
 import {
+  accountPasswordSchema,
   appointmentSchema,
   bookingClientSchema,
   clientSchema,
+  emailChangeSchema,
   inviteSchema,
   parseIn,
-  passwordChangeSchema,
   salonSettingsSchema,
   salonSettingsUpdate,
   serviceSchema,
@@ -56,11 +63,13 @@ export async function createService(_prev: FormState, formData: FormData): Promi
     const parsed = parseIn(serviceSchema, Object.fromEntries(formData), locale);
     if (!parsed.success) return toFormState(parsed.error, t.validation);
     const supabase = await createSupabaseServerClient();
+    const { data: last } = await supabase.from("services").select("sort_order").eq("salon_id", salon.id).order("sort_order", { ascending: false }).limit(1).maybeSingle();
     const { error } = await supabase.from("services").insert({
       salon_id: salon.id,
       name: parsed.data.name,
       price: parsed.data.price,
       duration_minutes: parsed.data.durationMinutes,
+      sort_order: (last?.sort_order ?? 0) + 1,
     });
     if (error) return dbError(t, error.code, t.actions.serviceAddFailed);
     revalidatePath("/dashboard/services");
@@ -68,12 +77,58 @@ export async function createService(_prev: FormState, formData: FormData): Promi
   });
 }
 
+export async function updateService(_prev: FormState, formData: FormData): Promise<FormState> {
+  return withSession(true, async ({ salon, locale, t }) => {
+    const id = z.uuid().safeParse(formData.get("id"));
+    const parsed = parseIn(serviceSchema, Object.fromEntries(formData), locale);
+    if (!id.success) return { ok: false, message: t.actions.invalidService };
+    if (!parsed.success) return toFormState(parsed.error, t.validation);
+    const supabase = await createSupabaseServerClient();
+    const { data, error } = await supabase
+      .from("services")
+      .update({ name: parsed.data.name, price: parsed.data.price, duration_minutes: parsed.data.durationMinutes, active: formData.get("active") === "on" })
+      .eq("id", id.data)
+      .eq("salon_id", salon.id)
+      .select("id");
+    if (error) return dbError(t, error.code, t.actions.updateFailed);
+    if (!data?.length) return { ok: false, message: t.actions.forbidden };
+    revalidatePath("/dashboard/services");
+    return { ok: true, message: t.actions.serviceSaved };
+  });
+}
+
+/** Swaps a service with its neighbour in the voice agent's reading order. */
+export async function moveService(_prev: FormState, formData: FormData): Promise<FormState> {
+  return withSession(true, async ({ salon, t }) => {
+    const id = z.uuid().safeParse(formData.get("id"));
+    const dir = formData.get("dir") === "up" ? "up" : "down";
+    if (!id.success) return { ok: false, message: t.actions.invalidService };
+    const supabase = await createSupabaseServerClient();
+    const { data: list } = await supabase.from("services").select("id, sort_order").eq("salon_id", salon.id).order("sort_order").order("name");
+    const rows = list ?? [];
+    const i = rows.findIndex((r) => r.id === id.data);
+    const j = dir === "up" ? i - 1 : i + 1;
+    if (i < 0 || j < 0 || j >= rows.length) return null;
+    // Renumber densely so equal sort_order values (old data) can't stick.
+    [rows[i], rows[j]] = [rows[j], rows[i]];
+    const updates = rows.map((r, k) => ({ id: r.id, order: k + 1 })).filter((u) => rows.find((r) => r.id === u.id)?.sort_order !== u.order);
+    for (const u of updates) {
+      const { error } = await supabase.from("services").update({ sort_order: u.order }).eq("id", u.id).eq("salon_id", salon.id);
+      if (error) return dbError(t, error.code, t.actions.updateFailed);
+    }
+    revalidatePath("/dashboard/services");
+    return null;
+  });
+}
+
 export async function deleteService(_prev: FormState, formData: FormData): Promise<FormState> {
   return withSession(true, async ({ salon, t }) => {
     const id = z.uuid().safeParse(formData.get("id"));
     if (!id.success) return { ok: false, message: t.actions.invalidService };
+    if (formData.get("confirm") !== "on") return { ok: false, message: t.actions.confirmFirst };
     const supabase = await createSupabaseServerClient();
     const { error } = await supabase.from("services").delete().eq("id", id.data).eq("salon_id", salon.id);
+    if (error?.code === "23503") return { ok: false, message: t.actions.inUseHide };
     if (error) return dbError(t, error.code, t.actions.serviceRemoveFailed);
     revalidatePath("/dashboard/services");
     return { ok: true, message: t.actions.serviceRemoved };
@@ -100,6 +155,54 @@ export async function createClient(_prev: FormState, formData: FormData): Promis
   });
 }
 
+const clientUpdateSchema = clientSchema.extend({
+  id: z.uuid(),
+  firstName: clientSchema.shape.firstName.or(z.literal("")),
+  locale: z.enum(["ka", "en", ""]).optional().transform((v) => (v ? v : null)),
+  notes: z
+    .string()
+    .max(2000)
+    .optional()
+    .transform((v) => (v ?? "").replace(/\r\n/g, "\n").trim()),
+});
+
+export async function updateClient(_prev: FormState, formData: FormData): Promise<FormState> {
+  return withSession(false, async ({ salon, locale, t }) => {
+    const parsed = parseIn(clientUpdateSchema, { ...Object.fromEntries(formData), phoneNumber: withDialCode(formData, "phoneNumber") }, locale);
+    if (!parsed.success) return toFormState(parsed.error, t.validation);
+    const v = parsed.data;
+    const supabase = await createSupabaseServerClient();
+    const { data, error } = await supabase
+      .from("clients")
+      .update({ first_name: v.firstName, last_name: v.lastName, phone_number: v.phoneNumber, locale: v.locale, notes: v.notes })
+      .eq("id", v.id)
+      .eq("salon_id", salon.id)
+      .select("id");
+    if (error?.code === "23505") return { ok: false, message: t.actions.clientExists };
+    if (error) return dbError(t, error.code, t.actions.updateFailed);
+    if (!data?.length) return { ok: false, message: t.actions.forbidden };
+    revalidatePath(`/dashboard/clients/${v.id}`);
+    return { ok: true, message: t.actions.clientSaved };
+  });
+}
+
+/** Privacy deletion: the client, their appointments (FK cascade) and archived visits. Managers only. */
+export async function deleteClient(_prev: FormState, formData: FormData): Promise<FormState> {
+  return withSession(true, async ({ salon, t }) => {
+    const id = z.uuid().safeParse(formData.get("id"));
+    if (!id.success) return { ok: false, message: t.actions.invalidRequest };
+    if (formData.get("confirm") !== "on") return { ok: false, message: t.actions.confirmFirst };
+    const supabase = await createSupabaseServerClient();
+    const { data, error } = await supabase.from("clients").delete().eq("id", id.data).eq("salon_id", salon.id).select("id");
+    if (error) return dbError(t, error.code, t.actions.updateFailed);
+    if (!data?.length) return { ok: false, message: t.actions.forbidden };
+    // The archive has no FK and no delete policy; scope by salon explicitly.
+    await createSupabaseAdminClient().from("appointments_archive").delete().eq("salon_id", salon.id).eq("client_id", id.data);
+    revalidatePath("/dashboard", "layout");
+    redirect("/dashboard/clients");
+  });
+}
+
 // --- Appointments ----------------------------------------------------------
 
 export async function createAppointment(_prev: FormState, formData: FormData): Promise<FormState> {
@@ -122,12 +225,14 @@ export async function createAppointment(_prev: FormState, formData: FormData): P
     const supabase = await createSupabaseServerClient();
     const { data: service } = await supabase
       .from("services")
-      .select("duration_minutes")
+      .select("duration_minutes, active")
       .eq("id", parsed.data.serviceId)
       .eq("salon_id", salon.id)
       .maybeSingle();
     if (!service) return { ok: false, message: t.actions.invalidService };
-    const hours = { opensAt: salon.opens_at, closesAt: salon.closes_at, workingDays: salon.working_days };
+    // A stale form or crafted request must not book a hidden service.
+    if (!isBookableService(service)) return { ok: false, message: t.actions.serviceHidden };
+    const hours = salonHours(salon);
     const problem = workingHoursProblem(start, service.duration_minutes, salon.timezone, hours);
     if (problem === "closedDay") return { ok: false, message: t.actions.closedDay };
     if (problem) return { ok: false, message: fmt(t.actions.outsideHours, { opens: salon.opens_at.slice(0, 5), closes: salon.closes_at.slice(0, 5) }) };
@@ -142,7 +247,7 @@ export async function createAppointment(_prev: FormState, formData: FormData): P
       .eq("phone_number", client.phoneNumber)
       .maybeSingle();
     let clientId = found?.id;
-    if (found && !found.first_name) {
+    if (found && !found.first_name && client.firstName) {
       await supabase.from("clients").update({ first_name: client.firstName, last_name: client.lastName }).eq("id", found.id).eq("salon_id", salon.id);
     }
     if (!clientId) {
@@ -155,6 +260,10 @@ export async function createAppointment(_prev: FormState, formData: FormData): P
       clientId = created.id;
     }
 
+    if (staffId) {
+      const { data: barber } = await supabase.from("profiles").select("active, takes_clients").eq("id", staffId).eq("salon_id", salon.id).maybeSingle();
+      if (!isBookableBarber(barber)) return { ok: false, message: t.actions.barberUnavailable };
+    }
     const end = new Date(start.getTime() + service.duration_minutes * 60_000);
     const candidates = staffId ? [staffId] : await freeBarbers(supabase, salon, start, end);
     if (!candidates.length) return { ok: false, message: t.actions.noBarberFree };
@@ -180,11 +289,62 @@ export async function createAppointment(_prev: FormState, formData: FormData): P
   });
 }
 
+/**
+ * Free start times for the booking form on one day (salon time), from the
+ * same engine as the voice agent. Barbers only see their own chair.
+ */
+export async function availableSlots(input: { serviceId: string; staffId: string; date: string }): Promise<{ time: string; staffIds: string[] }[] | null> {
+  const session = await getSession();
+  if (!session) return null;
+  const { salon, userId, isManager } = session;
+  const serviceId = z.uuid().safeParse(input.serviceId);
+  const date = z.string().refine(isIsoDate).safeParse(input.date);
+  const staffId = input.staffId ? z.uuid().safeParse(input.staffId) : null;
+  if (!serviceId.success || !date.success || (staffId && !staffId.success)) return null;
+  const wanted = staffId?.data ?? (isManager ? null : userId);
+  if (!isManager && wanted !== userId) return null;
+
+  const supabase = await createSupabaseServerClient();
+  const [y, m, d] = date.data.split("-").map(Number);
+  const dayStart = zonedToUtc(y, m, d, 0, 0, salon.timezone);
+  const dayEnd = zonedToUtc(y, m, d + 1, 0, 0, salon.timezone);
+  const [service, staff, appts] = await Promise.all([
+    supabase.from("services").select("duration_minutes, active").eq("id", serviceId.data).eq("salon_id", salon.id).maybeSingle(),
+    // An explicitly chosen barber is checked like everyone else: inactive or
+    // not taking clients means no slots, even when picked by id.
+    wanted
+      ? supabase.from("profiles").select("id, active, takes_clients").eq("salon_id", salon.id).eq("id", wanted)
+      : supabase.from("profiles").select("id, active, takes_clients").eq("salon_id", salon.id),
+    supabase
+      .from("appointments")
+      .select("staff_id, appointment_time, ends_at")
+      .eq("salon_id", salon.id)
+      .in("status", ["pending", "confirmed"])
+      .gte("ends_at", dayStart.toISOString())
+      .lt("appointment_time", dayEnd.toISOString()),
+  ]);
+  if (!service.data) return null;
+  if (!isBookableService(service.data)) return [];
+  const barbers = (staff.data ?? []).filter(isBookableBarber);
+  const busy = appts.data ?? [];
+  return dayAvailability({
+    date: date.data,
+    timeZone: salon.timezone,
+    hours: salonHours(salon),
+    durationMinutes: service.data.duration_minutes,
+    now: new Date(),
+    barbers: barbers.map((b) => ({
+      id: b.id,
+      busy: busy.filter((a) => a.staff_id === b.id).map((a) => ({ start: new Date(a.appointment_time), end: new Date(a.ends_at) })),
+    })),
+  }).map(({ time, staffIds }) => ({ time, staffIds }));
+}
+
 /** Barbers free for [start, end), least booked that salon day first. */
 async function freeBarbers(supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>, salon: SessionContext["salon"], start: Date, end: Date) {
   const day = zonedDayBounds(start, salon.timezone);
   const [staff, appts] = await Promise.all([
-    supabase.from("profiles").select("id").eq("salon_id", salon.id).order("full_name"),
+    supabase.from("profiles").select("id").eq("salon_id", salon.id).eq("active", true).eq("takes_clients", true).order("full_name"),
     supabase
       .from("appointments")
       .select("staff_id, appointment_time, ends_at")
@@ -215,6 +375,46 @@ export async function updateAppointmentStatus(_prev: FormState, formData: FormDa
   });
 }
 
+/** Moves an appointment to a new start (same barber and service). The DB rejects overlaps (23P01). */
+export async function rescheduleAppointment(_prev: FormState, formData: FormData): Promise<FormState> {
+  return withSession(false, async ({ salon, locale, t }) => {
+    const id = z.uuid().safeParse(formData.get("id"));
+    const when = parseIn(appointmentSchema.pick({ localTime: true }), { localTime: withDateTime(formData, "localTime") }, locale);
+    if (!id.success) return { ok: false, message: t.actions.invalidRequest };
+    if (!when.success) return toFormState(when.error, t.validation);
+    const start = parseLocalDateTime(when.data.localTime, salon.timezone);
+    if (start.getTime() < Date.now() - 5 * 60_000) return { ok: false, message: t.actions.futureOnly };
+
+    const supabase = await createSupabaseServerClient();
+    const { data: appt } = await supabase
+      .from("appointments")
+      .select("id, status, services(duration_minutes)")
+      .eq("id", id.data)
+      .eq("salon_id", salon.id)
+      .maybeSingle();
+    if (!appt?.services) return { ok: false, message: t.actions.forbidden };
+    if (!canReschedule(appt.status)) return { ok: false, message: t.actions.cannotReschedule };
+    const hours = salonHours(salon);
+    const problem = workingHoursProblem(start, appt.services.duration_minutes, salon.timezone, hours);
+    if (problem === "closedDay") return { ok: false, message: t.actions.closedDay };
+    if (problem) return { ok: false, message: fmt(t.actions.outsideHours, { opens: salon.opens_at.slice(0, 5), closes: salon.closes_at.slice(0, 5) }) };
+
+    // RLS limits barbers to their own appointments; zero rows means not allowed.
+    const { data, error } = await supabase
+      .from("appointments")
+      .update({ appointment_time: start.toISOString(), reminder_sent_at: null })
+      .eq("id", id.data)
+      .eq("salon_id", salon.id)
+      // Same rule in the write itself, in case the status changed meanwhile.
+      .in("status", ["pending", "confirmed"])
+      .select("id");
+    if (error) return dbError(t, error.code, t.actions.updateFailed);
+    if (!data?.length) return { ok: false, message: t.actions.cannotReschedule };
+    revalidatePath("/dashboard", "layout");
+    return { ok: true, message: t.actions.rescheduled };
+  });
+}
+
 // --- Team ------------------------------------------------------------------
 
 export async function inviteBarber(_prev: FormState, formData: FormData): Promise<FormState> {
@@ -224,7 +424,8 @@ export async function inviteBarber(_prev: FormState, formData: FormData): Promis
 
     const admin = createSupabaseAdminClient();
     const { data, error } = await admin.auth.admin.inviteUserByEmail(parsed.data.email, {
-      redirectTo: `${siteUrl()}/auth/confirm`,
+      // Invite links open the set-password form (see /auth/confirm).
+      redirectTo: `${appUrl()}/auth/confirm?next=${encodeURIComponent("/reset-password?invite=1")}`,
       data: { full_name: parsed.data.fullName },
     });
     if (error || !data.user) {
@@ -247,6 +448,51 @@ export async function inviteBarber(_prev: FormState, formData: FormData): Promis
     }
     revalidatePath("/dashboard/team");
     return { ok: true, message: fmt(t.actions.inviteSent, { email: parsed.data.email }) };
+  });
+}
+
+/** Manager edits another member: role, active, takes clients. Not their own role (no lock-out). */
+export async function updateStaff(_prev: FormState, formData: FormData): Promise<FormState> {
+  return withSession(true, async ({ salon, userId, t }) => {
+    const id = z.uuid().safeParse(formData.get("id"));
+    const role = z.enum(["manager", "barber"]).safeParse(formData.get("role"));
+    if (!id.success || !role.success) return { ok: false, message: t.actions.invalidMember };
+    const self = id.data === userId;
+    const admin = createSupabaseAdminClient();
+    const { data, error } = await admin
+      .from("profiles")
+      .update({
+        takes_clients: formData.get("takesClients") === "on",
+        // A manager can't demote or deactivate themselves.
+        ...(self ? {} : { role: role.data, active: formData.get("active") === "on" }),
+      })
+      .eq("id", id.data)
+      .eq("salon_id", salon.id)
+      .select("id");
+    if (error) return dbError(t, error.code, t.actions.updateFailed);
+    if (!data?.length) return { ok: false, message: t.actions.forbidden };
+    revalidatePath("/dashboard", "layout");
+    return { ok: true, message: t.actions.memberSaved };
+  });
+}
+
+/** Sends the invite email again to someone who hasn't signed in yet. */
+export async function resendInvite(_prev: FormState, formData: FormData): Promise<FormState> {
+  return withSession(true, async ({ salon, t }) => {
+    const id = z.uuid().safeParse(formData.get("id"));
+    if (!id.success) return { ok: false, message: t.actions.invalidMember };
+    const admin = createSupabaseAdminClient();
+    const { data: member } = await admin.from("profiles").select("email, full_name").eq("id", id.data).eq("salon_id", salon.id).maybeSingle();
+    if (!member) return { ok: false, message: t.actions.forbidden };
+    const { error } = await admin.auth.admin.inviteUserByEmail(member.email, {
+      redirectTo: `${appUrl()}/auth/confirm?next=${encodeURIComponent("/reset-password?invite=1")}`,
+      data: { full_name: member.full_name },
+    });
+    if (error) {
+      console.error("invite resend failed", error.code);
+      return { ok: false, message: t.actions.inviteFailed };
+    }
+    return { ok: true, message: fmt(t.actions.inviteSent, { email: member.email }) };
   });
 }
 
@@ -287,10 +533,22 @@ export async function updateSalonSettings(_prev: FormState, formData: FormData):
         opensAt: withTime(formData, "opensAt"),
         closesAt: withTime(formData, "closesAt"),
         workingDays: formData.getAll("workingDays"),
+        closedDates: formData.getAll("closedDates").map(String),
       },
       locale,
     );
     if (!parsed.success) return toFormState(parsed.error, t.validation);
+
+    // A new number must exist in the Twilio account, or calls and SMS never
+    // reach us (a personal mobile used to be saved here). Without Twilio the
+    // number is kept as is; the connection panel says Twilio is off.
+    const phone = parsed.data.phoneNumber;
+    if (phone && phone !== salon.phone_number) {
+      const found = await lookupTwilioNumber(phone);
+      if (found.kind === "missing") return { ok: false, message: t.actions.numberNotInTwilio, fieldErrors: { phoneNumber: [t.actions.numberNotInTwilio] } };
+      if (found.kind === "error") return { ok: false, message: t.actions.twilioCheckFailed };
+    }
+
     const supabase = await createSupabaseServerClient();
     const { error } = await supabase.from("salons").update(salonSettingsUpdate(parsed.data)).eq("id", salon.id);
     if (error?.code === "23505") return { ok: false, message: t.actions.phoneTaken };
@@ -320,12 +578,71 @@ export async function updateAccount(_prev: FormState, formData: FormData): Promi
 }
 
 export async function changePassword(_prev: FormState, formData: FormData): Promise<FormState> {
-  return withSession(false, async ({ locale, t }) => {
-    const parsed = parseIn(passwordChangeSchema, Object.fromEntries(formData), locale);
+  return withSession(false, async ({ userId, locale, t }) => {
+    const parsed = parseIn(accountPasswordSchema, Object.fromEntries(formData), locale);
     if (!parsed.success) return toFormState(parsed.error, t.validation);
+    // Slows guessing the current password from a hijacked session.
+    if (!rateLimit(`pw-change:${userId}`, 5, 15 * 60_000).ok) return { ok: false, message: t.auth.forgot.tooMany };
+
     const supabase = await createSupabaseServerClient();
+    const { data } = await supabase.auth.getClaims();
+    const email = typeof data?.claims.email === "string" ? data.claims.email : null;
+    if (!email || !(await verifyPassword(email, parsed.data.currentPassword))) {
+      return { ok: false, message: t.actions.currentPasswordWrong, fieldErrors: { currentPassword: [t.actions.currentPasswordWrong] } };
+    }
     const { error } = await supabase.auth.updateUser({ password: parsed.data.password });
     if (error) return { ok: false, message: t.actions.passwordFailed };
+    await supabase.auth.signOut({ scope: "others" });
     return { ok: true, message: t.actions.passwordUpdated };
+  });
+}
+
+/** Managers change their own sign-in email; Supabase confirms it by email first. Barbers ask their manager. */
+export async function changeEmail(_prev: FormState, formData: FormData): Promise<FormState> {
+  return withSession(true, async ({ profile, locale, t }) => {
+    const parsed = parseIn(emailChangeSchema, Object.fromEntries(formData), locale);
+    if (!parsed.success) return toFormState(parsed.error, t.validation);
+    const email = parsed.data.email.toLowerCase();
+    if (email === profile.email.toLowerCase()) return { ok: false, message: t.actions.emailUnchanged };
+    const supabase = await createSupabaseServerClient();
+    const { error } = await supabase.auth.updateUser({ email }, { emailRedirectTo: `${appUrl()}/auth/confirm` });
+    if (error) {
+      console.error("email change failed", error.code);
+      return { ok: false, message: t.actions.emailChangeFailed };
+    }
+    return { ok: true, message: fmt(t.actions.emailChangeSent, { email }) };
+  });
+}
+
+/**
+ * Deletes the whole salon: every staff login, then the salon row, which
+ * cascades to services, clients, appointments and call logs. Archived visits
+ * are removed by salon id. The manager must type the salon name exactly and
+ * tick the confirmation. Runs with the service role after the manager check.
+ */
+export async function deleteSalon(_prev: FormState, formData: FormData): Promise<FormState> {
+  return withSession(true, async ({ salon, t }) => {
+    if (formData.get("confirm") !== "on") return { ok: false, message: t.actions.confirmFirst };
+    if (String(formData.get("salonName") ?? "").trim() !== salon.name.trim()) {
+      return { ok: false, message: t.actions.salonNameMismatch, fieldErrors: { salonName: [t.actions.salonNameMismatch] } };
+    }
+    const admin = createSupabaseAdminClient();
+    const { data: staff, error: staffError } = await admin.from("profiles").select("id").eq("salon_id", salon.id);
+    if (staffError) return { ok: false, message: t.actions.deleteSalonFailed };
+
+    await admin.from("appointments_archive").delete().eq("salon_id", salon.id);
+    const { error } = await admin.from("salons").delete().eq("id", salon.id);
+    if (error) {
+      console.error("salon delete failed", error.code);
+      return { ok: false, message: t.actions.deleteSalonFailed };
+    }
+    // Profiles are gone with the salon; now remove the logins themselves.
+    for (const s of staff ?? []) {
+      const { error: userError } = await admin.auth.admin.deleteUser(s.id);
+      if (userError) console.error("staff login delete failed", userError.code);
+    }
+    const supabase = await createSupabaseServerClient();
+    await supabase.auth.signOut({ scope: "local" });
+    redirect("/?deleted=1");
   });
 }

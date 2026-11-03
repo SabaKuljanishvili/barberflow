@@ -58,8 +58,11 @@ export async function proxy(request: NextRequest) {
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   const needsAuth = pathname.startsWith("/dashboard");
   const isAuthPage = pathname === "/login" || pathname === "/signup";
+  // The recovery/invite session must be refreshed here too, but a signed-in
+  // user is not bounced away from it.
+  const isResetPage = pathname === "/reset-password";
 
-  if (url && key && (needsAuth || isAuthPage)) {
+  if (url && key && (needsAuth || isAuthPage || isResetPage)) {
     const supabase = createServerClient(url, key, {
       cookies: {
         getAll: () => request.cookies.getAll(),

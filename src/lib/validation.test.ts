@@ -3,7 +3,7 @@ import { money, spokenMoney } from "./format";
 import { splitE164 } from "./phone-countries";
 import { en } from "@/i18n/dictionaries/en";
 import { ka } from "@/i18n/dictionaries/ka";
-import { appointmentSchema, bookingClientSchema, normalizePhone, parseIn, passwordSchema, salonSettingsSchema, sanitizeText, serviceSchema, signupSchema, toFormState, withDateTime, withDialCode, withTime } from "./validation";
+import { accountPasswordSchema, appointmentSchema, bookingClientSchema, normalizePhone, parseIn, passwordSchema, salonSettingsSchema, sanitizeText, serviceSchema, signupSchema, toFormState, withDateTime, withDialCode, withTime } from "./validation";
 
 describe("localized errors", () => {
   it("translates custom message keys", () => {
@@ -177,5 +177,29 @@ describe("bookingClientSchema", () => {
   it("requires a name and a valid phone", () => {
     expect(bookingClientSchema.safeParse({ clientName: "", phoneNumber: "+995599123456" }).success).toBe(false);
     expect(bookingClientSchema.safeParse({ clientName: "Nino", phoneNumber: "123" }).success).toBe(false);
+  });
+});
+
+describe("accountPasswordSchema", () => {
+  const ok = { currentPassword: "OldPassw0rd!", password: "NewPassw0rd1", confirm: "NewPassw0rd1" };
+  it("accepts a strong new password with the current one", () => {
+    expect(accountPasswordSchema.safeParse(ok).success).toBe(true);
+  });
+  it("requires the current password", () => {
+    const r = accountPasswordSchema.safeParse({ ...ok, currentPassword: "" });
+    expect(r.success).toBe(false);
+    expect(r.error?.issues[0].path).toEqual(["currentPassword"]);
+  });
+  it("applies the signup strength rules", () => {
+    expect(accountPasswordSchema.safeParse({ ...ok, password: "short", confirm: "short" }).success).toBe(false);
+  });
+  it("rejects mismatched confirmation and reusing the current password", () => {
+    expect(accountPasswordSchema.safeParse({ ...ok, confirm: "Other1passwd" }).error?.issues[0].message).toBe("passwordsMatch");
+    const same = accountPasswordSchema.safeParse({ ...ok, currentPassword: ok.password });
+    expect(same.error?.issues.map((i) => i.message)).toContain("passwordSame");
+  });
+  it("has translations for every custom message", () => {
+    expect(en.validation.passwordSame).toBeTruthy();
+    expect(ka.validation.passwordSame).toBeTruthy();
   });
 });

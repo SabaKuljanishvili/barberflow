@@ -7,16 +7,19 @@ import type { Dictionary } from "@/i18n/dictionaries/en";
 import { getI18n } from "@/i18n/server";
 import { getSession, type SessionContext } from "@/lib/auth";
 import { siteUrl } from "@/lib/env";
-import { createSupabaseAdminClient, createSupabaseServerClient } from "@/lib/supabase/server";
+import { rateLimit } from "@/lib/rate-limit";
+import { createSupabaseAdminClient, createSupabaseServerClient, verifyPassword } from "@/lib/supabase/server";
 import { freeBarbersFor } from "@/lib/booking";
+import { lookupTwilioNumber } from "@/lib/voice/twilio-numbers";
 import { parseLocalDateTime, workingHoursProblem, zonedDayBounds } from "@/lib/time";
 import {
+  accountPasswordSchema,
   appointmentSchema,
   bookingClientSchema,
   clientSchema,
+  emailChangeSchema,
   inviteSchema,
   parseIn,
-  passwordChangeSchema,
   salonSettingsSchema,
   salonSettingsUpdate,
   serviceSchema,
@@ -224,7 +227,8 @@ export async function inviteBarber(_prev: FormState, formData: FormData): Promis
 
     const admin = createSupabaseAdminClient();
     const { data, error } = await admin.auth.admin.inviteUserByEmail(parsed.data.email, {
-      redirectTo: `${siteUrl()}/auth/confirm`,
+      // Invite links open the set-password form (see /auth/confirm).
+      redirectTo: `${siteUrl()}/auth/confirm?next=${encodeURIComponent("/reset-password?invite=1")}`,
       data: { full_name: parsed.data.fullName },
     });
     if (error || !data.user) {
@@ -291,6 +295,17 @@ export async function updateSalonSettings(_prev: FormState, formData: FormData):
       locale,
     );
     if (!parsed.success) return toFormState(parsed.error, t.validation);
+
+    // A new number must exist in the Twilio account, or calls and SMS never
+    // reach us (a personal mobile used to be saved here). Without Twilio the
+    // number is kept as is; the connection panel says Twilio is off.
+    const phone = parsed.data.phoneNumber;
+    if (phone && phone !== salon.phone_number) {
+      const found = await lookupTwilioNumber(phone);
+      if (found.kind === "missing") return { ok: false, message: t.actions.numberNotInTwilio, fieldErrors: { phoneNumber: [t.actions.numberNotInTwilio] } };
+      if (found.kind === "error") return { ok: false, message: t.actions.twilioCheckFailed };
+    }
+
     const supabase = await createSupabaseServerClient();
     const { error } = await supabase.from("salons").update(salonSettingsUpdate(parsed.data)).eq("id", salon.id);
     if (error?.code === "23505") return { ok: false, message: t.actions.phoneTaken };
@@ -320,12 +335,38 @@ export async function updateAccount(_prev: FormState, formData: FormData): Promi
 }
 
 export async function changePassword(_prev: FormState, formData: FormData): Promise<FormState> {
-  return withSession(false, async ({ locale, t }) => {
-    const parsed = parseIn(passwordChangeSchema, Object.fromEntries(formData), locale);
+  return withSession(false, async ({ userId, locale, t }) => {
+    const parsed = parseIn(accountPasswordSchema, Object.fromEntries(formData), locale);
     if (!parsed.success) return toFormState(parsed.error, t.validation);
+    // Slows guessing the current password from a hijacked session.
+    if (!rateLimit(`pw-change:${userId}`, 5, 15 * 60_000).ok) return { ok: false, message: t.auth.forgot.tooMany };
+
     const supabase = await createSupabaseServerClient();
+    const { data } = await supabase.auth.getClaims();
+    const email = typeof data?.claims.email === "string" ? data.claims.email : null;
+    if (!email || !(await verifyPassword(email, parsed.data.currentPassword))) {
+      return { ok: false, message: t.actions.currentPasswordWrong, fieldErrors: { currentPassword: [t.actions.currentPasswordWrong] } };
+    }
     const { error } = await supabase.auth.updateUser({ password: parsed.data.password });
     if (error) return { ok: false, message: t.actions.passwordFailed };
+    await supabase.auth.signOut({ scope: "others" });
     return { ok: true, message: t.actions.passwordUpdated };
+  });
+}
+
+/** Managers change their own sign-in email; Supabase confirms it by email first. Barbers ask their manager. */
+export async function changeEmail(_prev: FormState, formData: FormData): Promise<FormState> {
+  return withSession(true, async ({ profile, locale, t }) => {
+    const parsed = parseIn(emailChangeSchema, Object.fromEntries(formData), locale);
+    if (!parsed.success) return toFormState(parsed.error, t.validation);
+    const email = parsed.data.email.toLowerCase();
+    if (email === profile.email.toLowerCase()) return { ok: false, message: t.actions.emailUnchanged };
+    const supabase = await createSupabaseServerClient();
+    const { error } = await supabase.auth.updateUser({ email }, { emailRedirectTo: `${siteUrl()}/auth/confirm` });
+    if (error) {
+      console.error("email change failed", error.code);
+      return { ok: false, message: t.actions.emailChangeFailed };
+    }
+    return { ok: true, message: fmt(t.actions.emailChangeSent, { email }) };
   });
 }

@@ -20,7 +20,7 @@ export async function generateMetadata(): Promise<Metadata> {
   return { title: t.dashboard.appointments.title };
 }
 
-const STATUSES: AppointmentStatus[] = ["pending", "confirmed", "completed", "cancelled"];
+const STATUSES: AppointmentStatus[] = ["pending", "confirmed", "completed", "no_show", "cancelled"];
 
 export default async function AppointmentsPage({
   searchParams,

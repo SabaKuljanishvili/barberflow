@@ -2,7 +2,7 @@
 //   npx supabase gen types typescript --project-id <id> > src/lib/supabase/database.types.ts
 
 export type StaffRole = "manager" | "barber";
-export type AppointmentStatus = "pending" | "confirmed" | "cancelled" | "completed";
+export type AppointmentStatus = "pending" | "confirmed" | "cancelled" | "completed" | "no_show";
 export type SubscriptionStatus = "trialing" | "active" | "past_due" | "cancelled";
 export type CallOutcome = "booked" | "abandoned" | "no_availability" | "error";
 export type LocaleCode = "ka" | "en";
@@ -23,6 +23,7 @@ export type Database = {
           working_days: number[];
           voice_agent_enabled: boolean;
           locale: LocaleCode;
+          auto_complete_appointments: boolean;
           created_at: string;
         };
         Insert: {
@@ -36,6 +37,7 @@ export type Database = {
           working_days?: number[];
           voice_agent_enabled?: boolean;
           locale?: LocaleCode;
+          auto_complete_appointments?: boolean;
           created_at?: string;
         };
         Update: Partial<Database["public"]["Tables"]["salons"]["Insert"]>;
@@ -228,6 +230,7 @@ export type Database = {
       current_salon_id: { Args: Record<string, never>; Returns: string };
       is_manager: { Args: Record<string, never>; Returns: boolean };
       archive_old_appointments: { Args: Record<string, never>; Returns: number };
+      complete_past_appointments: { Args: Record<string, never>; Returns: number };
     };
     Enums: {
       staff_role: StaffRole;

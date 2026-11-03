@@ -5,6 +5,7 @@ import { requireUser } from "@/lib/auth";
 import { clientName, money } from "@/lib/format";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { formatInZone, zonedDayBounds } from "@/lib/time";
+import { ReviewCard, type ReviewItem } from "@/components/dashboard/review-card";
 import { StatusBadge } from "@/components/dashboard/status-badge";
 import { INTL_LOCALE, fmt } from "@/i18n/config";
 import { getI18n } from "@/i18n/server";
@@ -26,7 +27,7 @@ export default async function OverviewPage({ searchParams }: { searchParams: Pro
   const weekStart = new Date(today.start.getTime() - 6 * 86_400_000);
   const monthStart = new Date(today.start.getTime() - 29 * 86_400_000);
 
-  const [todayAppts, week, newClients, calls] = await Promise.all([
+  const [todayAppts, week, newClients, calls, review] = await Promise.all([
     supabase
       .from("appointments")
       .select("id, appointment_time, status, staff_id, clients(first_name, last_name, phone_number), services(name), profiles(full_name)")
@@ -42,7 +43,22 @@ export default async function OverviewPage({ searchParams }: { searchParams: Pro
       .neq("status", "cancelled"),
     supabase.from("clients").select("id", { count: "exact", head: true }).gte("created_at", monthStart.toISOString()),
     supabase.from("call_logs").select("outcome").gte("created_at", weekStart.toISOString()),
+    // RLS already limits barbers to what they may update; the action re-checks.
+    supabase
+      .from("appointments")
+      .select("id, appointment_time, clients(first_name, last_name, phone_number), services(name)")
+      .in("status", ["pending", "confirmed"])
+      .lt("ends_at", now.toISOString())
+      .order("appointment_time", { ascending: false })
+      .limit(8),
   ]);
+  const reviewItems: ReviewItem[] = (review.data ?? []).map((a) => ({
+    id: a.id,
+    client: clientName(a.clients, t.dashboard.unknownClient),
+    when: formatInZone(a.appointment_time, salon.timezone, {}, intl),
+    whenIso: a.appointment_time,
+    service: a.services?.name ?? "",
+  }));
 
   const todayList = todayAppts.data ?? [];
   const weekRows = week.data ?? [];
@@ -90,6 +106,8 @@ export default async function OverviewPage({ searchParams }: { searchParams: Pro
         />
         <Stat icon={UserPlus} label={o.newClients} value={String(newClients.count ?? 0)} note={o.newClientsNote} />
       </section>
+
+      <ReviewCard items={reviewItems} labels={o} />
 
       <div className="grid gap-6 xl:grid-cols-3">
         <section aria-labelledby="today" className="card xl:col-span-2">

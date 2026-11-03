@@ -142,7 +142,7 @@ export const bookingClientSchema = z
 
 export const statusSchema = z.object({
   id: z.uuid(),
-  status: z.enum(["pending", "confirmed", "cancelled", "completed"]),
+  status: z.enum(["pending", "confirmed", "cancelled", "completed", "no_show"]),
 });
 
 export const inviteSchema = z.object({
@@ -162,6 +162,7 @@ export const salonSettingsSchema = z
     closesAt: timeOfDay,
     workingDays: z.array(z.coerce.number().int().min(1).max(7)).min(1, m("workingDays")),
     voiceAgentEnabled: z.literal("on").optional(),
+    autoComplete: z.literal("on").optional(),
     locale: z.enum(["ka", "en"], m("language")),
   })
   .refine((v) => v.closesAt > v.opensAt, { path: ["closesAt"], message: m("closesAfterOpens") });
@@ -179,6 +180,7 @@ export function salonSettingsUpdate(v: z.output<typeof salonSettingsSchema>) {
     closes_at: v.closesAt,
     working_days: [...new Set(v.workingDays)].sort(),
     voice_agent_enabled: v.voiceAgentEnabled === "on",
+    auto_complete_appointments: v.autoComplete === "on",
     locale: v.locale,
   };
 }
@@ -186,6 +188,16 @@ export function salonSettingsUpdate(v: z.output<typeof salonSettingsSchema>) {
 export const passwordChangeSchema = z
   .object({ password: passwordSchema, confirm: z.string() })
   .refine((v) => v.password === v.confirm, { path: ["confirm"], message: m("passwordsMatch") });
+
+/** Signed-in password change: the current password is re-checked server-side first. */
+export const accountPasswordSchema = z
+  .object({ currentPassword: z.string().min(1, m("passwordRequired")).max(72), password: passwordSchema, confirm: z.string() })
+  .refine((v) => v.password === v.confirm, { path: ["confirm"], message: m("passwordsMatch") })
+  .refine((v) => v.password !== v.currentPassword, { path: ["password"], message: m("passwordSame") });
+
+export const forgotPasswordSchema = z.object({ email: z.email(m("email")).max(254) });
+
+export const emailChangeSchema = z.object({ email: z.email(m("email")).max(254) });
 
 export function isValidTimeZone(tz: string): boolean {
   try {

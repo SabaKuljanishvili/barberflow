@@ -8,28 +8,13 @@ const optional = z
   .transform((v) => (v === "" ? undefined : v))
   .optional();
 
-const azureVoice = (fallback: string) =>
-  z
-    .string()
-    .trim()
-    .optional()
-    .transform((v) => v || fallback)
-    .pipe(z.string().regex(/^[a-z]{2,3}-[A-Z]{2}-[A-Za-z]+Neural$/, "must be an Azure neural voice name"));
-
+// Twilio and Azure Speech are optional and parsed on their own in
+// env-sections.ts (twilioConfig / azureConfig), so a malformed value there
+// switches off only that feature instead of throwing here.
 const serverSchema = z.object({
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(20),
-  // Twilio (phone calls + SMS) is optional. Without it the web voice agent
-  // still works, phone webhooks answer 403 and SMS sends are skipped.
-  TWILIO_ACCOUNT_SID: optional.pipe(z.string().regex(/^AC[0-9a-f]{32}$/i, "must be a Twilio Account SID").optional()),
-  TWILIO_AUTH_TOKEN: optional.pipe(z.string().min(16).optional()),
-  TWILIO_WEBHOOK_BASE_URL: optional.pipe(z.url().optional()),
   CRON_SECRET: z.string().min(32, "use at least 32 random characters"),
-  // Azure AI Speech (text-to-speech). Required for Georgian calls.
-  AZURE_SPEECH_KEY: optional,
-  AZURE_SPEECH_REGION: optional.pipe(z.string().regex(/^[a-z0-9]+$/, "e.g. westeurope").optional()),
-  AZURE_TTS_VOICE_KA: azureVoice("ka-GE-EkaNeural"),
-  AZURE_TTS_VOICE_EN: azureVoice("en-US-JennyNeural"),
   BUSINESS_LEGAL_NAME: optional,
   BUSINESS_EMAIL: optional,
   BUSINESS_PHONE: optional,

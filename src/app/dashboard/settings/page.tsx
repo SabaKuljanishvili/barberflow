@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { Breadcrumbs } from "@/components/breadcrumbs";
+import { TwilioPanel } from "@/components/dashboard/twilio-panel";
 import { ActionForm, PendingButton } from "@/components/ui/action-form";
 import { Field, SelectField } from "@/components/ui/field";
 import { PhoneField } from "@/components/ui/phone-field";
@@ -79,18 +81,33 @@ export default async function SettingsPage() {
               <input type="checkbox" name="voiceAgentEnabled" defaultChecked={salon.voice_agent_enabled} className="size-4 accent-brand" />
               {p.enabled}
             </label>
-            <div className="rounded-2xl bg-canvas p-4 text-sm text-muted">
-              <p className="font-medium text-ink">{p.twilioSetup}</p>
-              <p className="mt-1">
-                {p.twilioBefore} <code className="break-all text-ink">/api/voice/incoming</code>
-                {p.twilioStatus} <code className="break-all text-ink">/api/voice/status</code> {p.twilioSms}{" "}
-                <code className="break-all text-ink">/api/sms/incoming</code> {p.twilioAfter}
+            <div>
+              <label className="flex items-start gap-3 text-sm">
+                <input
+                  type="checkbox"
+                  name="autoComplete"
+                  defaultChecked={salon.auto_complete_appointments}
+                  aria-describedby="autoComplete-hint"
+                  className="mt-0.5 size-4 accent-brand"
+                />
+                {p.autoComplete}
+              </label>
+              <p id="autoComplete-hint" className="mt-1 pl-7 text-xs text-muted">
+                {p.autoCompleteHint}
               </p>
             </div>
             <PendingButton className="btn-primary w-full">{p.save}</PendingButton>
           </section>
         </div>
       </ActionForm>
+
+      {/* Outside the form: it holds buttons of its own, and a slow Twilio
+          lookup must not hold up the settings. */}
+      <section aria-label={p.twilioSetup} className="xl:max-w-[calc(50%-0.75rem)] xl:ml-auto">
+        <Suspense fallback={<div className="h-40 animate-pulse rounded-2xl bg-canvas" />}>
+          <TwilioPanel phone={salon.phone_number} labels={p} />
+        </Suspense>
+      </section>
     </div>
   );
 }

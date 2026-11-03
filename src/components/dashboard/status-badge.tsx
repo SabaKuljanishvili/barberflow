@@ -1,4 +1,4 @@
-import { CheckCircle2, CircleDashed, CircleSlash, Flag } from "lucide-react";
+import { CheckCircle2, CircleDashed, CircleSlash, Flag, UserX } from "lucide-react";
 import { getI18n } from "@/i18n/server";
 import type { AppointmentStatus } from "@/lib/supabase/database.types";
 
@@ -8,6 +8,7 @@ const styles: Record<AppointmentStatus, { className: string; icon: typeof CheckC
   confirmed: { className: "bg-brand-soft text-accent", icon: CheckCircle2 },
   completed: { className: "bg-busy text-muted", icon: Flag },
   cancelled: { className: "bg-danger-soft text-danger", icon: CircleSlash },
+  no_show: { className: "bg-warn-soft text-warn", icon: UserX },
 };
 
 export async function StatusBadge({ status }: { status: AppointmentStatus }) {

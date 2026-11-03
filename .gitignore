@@ -47,3 +47,6 @@ supabase/.branches
 
 # graphify generated output
 graphify-out/
+
+# agent scratch
+.superpowers/

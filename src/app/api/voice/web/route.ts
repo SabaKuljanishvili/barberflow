@@ -1,6 +1,7 @@
 import { isLocale, type Locale } from "@/i18n/config";
 import { getI18n } from "@/i18n/server";
 import { getSession } from "@/lib/auth";
+import { siteUrl } from "@/lib/env";
 import { normalizePhone, withDialCode } from "@/lib/validation";
 import { WEB_VOICE_HEADER } from "@/lib/voice/web-audio";
 import { isWav, MAX_AUDIO_BYTES, sttConfigured, transcribe } from "@/lib/voice/stt";
@@ -28,7 +29,7 @@ function json(body: object, status = 200) {
 function sameOrigin(request: Request): boolean {
   if (request.headers.get(WEB_VOICE_HEADER) !== "1") return false;
   const origin = request.headers.get("origin");
-  return !origin || origin === new URL(request.url).origin || origin === process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "");
+  return !origin || origin === new URL(request.url).origin || origin === siteUrl();
 }
 
 export async function POST(request: Request) {

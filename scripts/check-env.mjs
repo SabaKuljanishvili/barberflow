@@ -34,6 +34,15 @@ if (process.env.NODE_ENV === "production" && process.env.NEXT_PUBLIC_SITE_URL?.s
   failures.push("NEXT_PUBLIC_SITE_URL (must be https in production)");
 }
 
+try {
+  const u = new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "");
+  if (u.pathname !== "/" || u.search || u.hash) {
+    console.warn(`Warning: NEXT_PUBLIC_SITE_URL should be the bare origin (${u.origin}); the path "${u.pathname}" is ignored.`);
+  }
+} catch {
+  // Reported by the rule above.
+}
+
 if (!Object.keys(twilioRules).some((key) => process.env[key])) {
   console.warn("Warning: Twilio not set. Phone calls and SMS are off; the web voice agent (/dashboard/voice) still works.");
 } else {

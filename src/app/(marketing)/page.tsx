@@ -1,12 +1,8 @@
 import type { Metadata } from "next";
 import Link from "@/components/locale-link";
-import type { CSSProperties } from "react";
 import { JsonLd } from "@/components/json-ld";
-import { CallStream } from "@/components/marketing/call-stream";
-import { isoDateIn } from "@/components/marketing/call-stream-data";
 import { Features } from "@/components/marketing/features";
-import { HeroHeadline } from "@/components/marketing/hero-headline";
-import { splitHeadline } from "@/components/marketing/hero-headline-data";
+import { Hero } from "@/components/marketing/hero";
 import { localBusinessSchema, organizationSchema, softwareSchema } from "@/lib/structured-data";
 import { site } from "@/lib/site";
 import { AgentSample } from "@/components/marketing/agent-sample";
@@ -33,9 +29,8 @@ function Arrow() {
 }
 
 export default async function HomePage() {
-  const { locale, t } = await getI18n();
+  const { t } = await getI18n();
   const h = t.home;
-  const title = { before: h.titleBefore, green: h.titleGreen, after: h.titleAfter };
   const business = localBusinessSchema();
   return (
     <>
@@ -43,32 +38,7 @@ export default async function HomePage() {
       <JsonLd data={softwareSchema(t.meta.description)} />
       {business && <JsonLd data={business} />}
 
-      <section id="top" className="wrap bf-cb hero-sec">
-        <div className="hero">
-          <div>
-            <span className="eyebrow">
-              <i aria-hidden="true" />
-              {h.eyebrow}
-            </span>
-            <HeroHeadline text={title} />
-            {/* Lede and buttons rise in just before the last letter lands. */}
-            <div style={{ "--after": `${splitHeadline(title).after}ms` } as CSSProperties}>
-              <p className="lede">{h.lede}</p>
-              <div className="ctas">
-                <Link className="bf-btn bf-btn-p" href="/signup">
-                  {h.ctaPrimary}
-                  <Arrow />
-                </Link>
-                <Link className="bf-btn bf-btn-g" href="/contact">
-                  {h.ctaSecondary}
-                </Link>
-              </div>
-            </div>
-          </div>
-          {/* "Today" for the booking dates, in the shop's time zone. */}
-          <CallStream text={h.callStream} locale={locale} today={isoDateIn("Asia/Tbilisi")} />
-        </div>
-      </section>
+      <Hero />
 
       <Features home={h} />
 

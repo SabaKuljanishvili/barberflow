@@ -65,7 +65,7 @@ describe("login access", () => {
   });
 
   it("a profile without the active column (migrations not applied) is denied and logged", async () => {
-    const stale = managerRow();
+    const stale: Record<string, unknown> = managerRow();
     delete stale.active;
     delete stale.takes_clients;
     profileRow = stale;

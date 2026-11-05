@@ -58,3 +58,8 @@
 - Optional integrations parse their own env (`lib/env-sections.ts`): `azureConfig()`/`twilioConfig()` never throw. `siteUrl()` is always a bare origin.
 - One availability engine: `findOpenSlots` (`lib/time.ts`, honours `closedDates`) feeds the voice agents (`nextSlots`), the dashboard slot chips (`lib/availability.ts` dayAvailability via the `availableSlots` action) and the calendar. Use `salonHours(salon)` to build its hours.
 - Bookable staff = `profiles.active && profiles.takes_clients`. Services are offered in `sort_order` and only when `active`.
+
+## Fix (2026-11-06): manager login bounced to "access ended"
+- Cause: the qa-fixes code was deployed, but migrations `20261103*` were not applied to the hosted project. `getSession()` reads `profiles.active` (added in `000700`); the column did not exist, so `row.active` was undefined and every member was treated as deactivated. `/auth/ended` then signed them out to `/login?error=access`.
+- Fix: apply migrations `20261103000000`–`000900` (in order). `000700` adds `active boolean not null default true`, which backfills existing members. No new migration needed. `getSession()` now logs a clear error when the column is missing or the profile query fails; access is still denied (`active !== true`). Regression test: `src/lib/auth.test.ts`.
+- QA logins: `npm run seed:test` (`scripts/seed-test-accounts.ts`) creates "Test Salon (QA)" with `qa-manager@` / `qa-barber@devskstudio.test`. Passwords go only to `.env.test-accounts.local` (git-ignored). `--reset` recreates them. It refuses to run before the `20261103*` migrations are applied.

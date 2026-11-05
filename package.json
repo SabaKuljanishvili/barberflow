@@ -11,7 +11,8 @@
     "test": "vitest run",
     "check-env": "node scripts/check-env.mjs",
     "prestart": "node scripts/check-env.mjs",
-    "audit": "npm audit --omit=dev"
+    "audit": "npm audit --omit=dev",
+    "seed:test": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/seed-test-accounts.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^1.3.0",

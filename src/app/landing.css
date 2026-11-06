@@ -1600,30 +1600,325 @@ html:has(.bf) {
   max-width: 680px;
 }
 
-/* Agent audio sample (components/marketing/agent-sample.tsx) */
-.bf .sample {
+/*
+ * Call sample, "Hear it" (components/marketing/agent-sample.tsx +
+ * call-sample.tsx), 1440 x 820 design: phone mockup left, eyebrow, h2 and
+ * transcript right, vertically centred. No glows or shadows. Under 768px:
+ * heading, then the phone (260px wide), then the transcript.
+ */
+.bf .cs-grid,
+.bf .cs-grid *,
+.bf .cs-grid *::before,
+.bf .cs-grid *::after {
+  box-sizing: border-box;
+}
+.bf .cs-grid {
   display: grid;
-  gap: 16px;
-  padding: 28px;
-  border-radius: 20px;
-  max-width: 820px;
+  grid-template-columns: 300px minmax(0, 1fr);
+  grid-template-rows: 1fr auto auto 1fr;
+  grid-template-areas:
+    "stage ."
+    "stage head"
+    "stage script"
+    "stage .";
+  column-gap: 88px;
+  color: var(--hero-ink);
 }
-.bf .sample audio {
-  width: 100%;
+.bf .cs-head {
+  grid-area: head;
 }
-.bf .sample-lines {
+.bf .cs-title {
+  margin: 18px 0 0;
+  font-family: var(--font-hero);
+  font-weight: 600;
+  font-size: clamp(34px, 3.5vw, 50px);
+  line-height: 1.12;
+  letter-spacing: -0.02em;
+  color: var(--hero-ink);
+}
+.bf .cs-title em {
+  font-style: italic;
+  color: var(--green-ink);
+}
+
+/* Phone (300 x 620); the play button overlaps its bottom edge. */
+.bf .cs-stage {
+  grid-area: stage;
+  align-self: center;
+  justify-self: center;
+  position: relative;
+  padding-bottom: 26px;
+}
+.bf .cs-phone {
+  width: 300px;
+  height: 620px;
+  padding: 9px;
+  border-radius: 46px;
+  background: var(--hero-phone);
+  border: 1px solid var(--hero-line);
+}
+.bf .cs-screen {
+  position: relative;
+  height: 100%;
+  padding: 78px 20px 0;
+  border-radius: 38px;
+  background: var(--hero-bar);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+.bf .cs-island {
+  position: absolute;
+  top: 14px;
+  left: 50%;
+  width: 88px;
+  height: 24px;
+  border-radius: 999px;
+  background: var(--hero-phone);
+  transform: translateX(-50%);
+}
+.bf .cs-logo {
+  margin-bottom: 18px;
+}
+.bf .cs-status {
   margin: 0;
-  display: grid;
-  gap: 8px;
-  font-size: 15px;
-}
-.bf .sample-lines dt {
-  font-weight: 700;
   font-size: 13px;
-  color: var(--muted);
+  font-weight: 600;
+  color: var(--green-ink);
 }
-.bf .sample-lines dd {
-  margin: 0 0 6px;
+.bf .cs-number {
+  margin: 10px 0 0;
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  word-spacing: 0.1em;
+  color: var(--hero-ink);
+  white-space: nowrap;
+}
+.bf .cs-timer {
+  margin: 6px 0 0;
+  font-size: 15px;
+  font-variant-numeric: tabular-nums;
+  color: var(--hero-muted);
+}
+.bf .cs-wave {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 48px;
+  margin-top: 44px;
+}
+.bf .cs-wave i {
+  width: 4px;
+  border-radius: 2px;
+  background: var(--hero-wave);
+  transition: background 0.2s;
+}
+.bf .cs-wave i[data-lit] {
+  background: var(--green-ink);
+}
+.bf .cs-booking {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: 50px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px 10px 10px;
+  border-radius: 16px;
+  background: var(--green-soft);
+  border: 1px solid rgba(99, 213, 165, 0.16);
+  text-align: left;
+}
+.bf .cs-check {
+  flex: none;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--green);
+  color: var(--hero-on-btn);
+}
+.bf .cs-service {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--hero-ink);
+}
+.bf .cs-btime {
+  font-size: 14px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--green-ink);
+}
+
+/* Play button (52px pill) and its "coming soon" tooltip. */
+.bf .cs-ctl {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  transform: translateX(-50%);
+}
+.bf .cs-play {
+  height: 52px;
+  padding: 0 22px 0 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--green);
+  color: var(--hero-on-btn);
+  font: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background 0.25s;
+}
+.bf .cs-play:hover {
+  background: var(--green-hi);
+}
+.bf .cs-play[aria-disabled="true"] {
+  cursor: not-allowed;
+  background: var(--green);
+  opacity: 0.6;
+}
+.bf .cs-play:focus-visible {
+  border-radius: 999px;
+}
+.bf .cs-play-icon {
+  flex: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--hero-ink);
+  color: var(--green);
+}
+.bf .cs-play-dur {
+  font-variant-numeric: tabular-nums;
+}
+.bf .cs-tip {
+  position: absolute;
+  bottom: calc(100% + 10px);
+  left: 50%;
+  padding: 6px 12px;
+  border-radius: 10px;
+  background: var(--hero-bar);
+  border: 1px solid var(--hero-line);
+  color: var(--hero-ink);
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  transform: translateX(-50%);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s;
+}
+.bf .cs-ctl:hover .cs-tip,
+.bf .cs-play:focus-visible + .cs-tip {
+  opacity: 1;
+}
+
+/* Transcript: a 1px rule on the left; the playing line gets a 2px accent. */
+.bf .cs-script {
+  grid-area: script;
+  margin-top: 40px;
+}
+.bf .cs-lines {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 22px;
+  border-left: 1px solid var(--hero-line);
+}
+.bf .cs-lines li {
+  position: relative;
+  padding-left: 28px;
+}
+.bf .cs-lines li[aria-current]::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -1.5px;
+  width: 2px;
+  background: var(--green-ink);
+}
+.bf .cs-who {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+.bf .cs-agent .cs-who {
+  color: var(--green-ink);
+}
+.bf .cs-caller .cs-who {
+  color: var(--hero-muted);
+}
+.bf .cs-lines q {
+  font-family: var(--font-hero);
+  font-size: 22px;
+  line-height: 1.45;
+  quotes: "\201C" "\201D" "\2018" "\2019";
+}
+.bf .cs-lines q:lang(ka) {
+  quotes: "\201E" "\201C" "\201A" "\2018";
+}
+.bf .cs-agent q {
+  color: var(--hero-ink);
+}
+.bf .cs-caller q {
+  color: var(--hero-ink2);
+}
+
+/* Tablet: narrower gap; the phone is drawn at 260px wide. */
+@media (max-width: 1023px) {
+  .bf .cs-grid {
+    grid-template-columns: 260px minmax(0, 1fr);
+    column-gap: 48px;
+  }
+  .bf .cs-phone {
+    zoom: 0.8667;
+  }
+}
+/* Phones: heading, phone, transcript. */
+@media (max-width: 767px) {
+  .bf .cs-grid {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: none;
+    grid-template-areas:
+      "head"
+      "stage"
+      "script";
+    row-gap: 40px;
+  }
+  .bf .cs-script {
+    margin-top: 0;
+  }
+  .bf .cs-lines {
+    gap: 18px;
+  }
+  .bf .cs-lines li {
+    padding-left: 20px;
+  }
+  .bf .cs-lines q {
+    font-size: 19px;
+  }
 }
 
 @supports (animation-timeline: view()) {

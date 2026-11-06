@@ -226,11 +226,17 @@ export const en = {
 
   sample: {
     eyebrow: "Hear it",
-    title: "A real booking call, in Georgian",
-    intro: "This is how the agent sounds to your clients. The transcript is below, translated.",
+    titleBefore: "A real booking call, ",
+    titleEm: "in Georgian",
     transcript: "Transcript",
     agent: "Agent",
     caller: "Client",
+    phoneLabel: "Phone screen: DevskStudio AI answers a call and books a haircut with Giorgi at 14:00.",
+    answering: "DevskStudio AI answering",
+    booking: "Haircut · Giorgi",
+    play: "Listen",
+    pause: "Pause",
+    soon: "Recording coming soon",
     lines: [
       { who: "agent", text: "Hello, you've reached Barber House. How can I help?" },
       { who: "caller", text: "I'd like a haircut tomorrow, at two." },

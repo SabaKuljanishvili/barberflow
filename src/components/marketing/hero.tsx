@@ -3,9 +3,9 @@ import { getI18n } from "@/i18n/server";
 import { isoDateIn, ribbonCards } from "./demo-bookings";
 
 /**
- * Home hero, ported from ../hero-reference.html: eyebrow chip, two-line serif
- * headline with the "call" pill, sub text and CTAs, then two crossing marquee
- * ribbons. Server component; every animation is CSS (landing.css, `.hx`).
+ * Home hero: eyebrow chip, two-line serif headline with the "call" pill, sub
+ * text and CTAs, then two crossing marquee ribbons. Server component; every
+ * animation is CSS (landing.css, `.hx`). No glows or shadows.
  */
 export async function Hero() {
   const { locale, t } = await getI18n();
@@ -50,13 +50,14 @@ export async function Hero() {
                 <path d="M5 12h14M13 6l6 6-6 6" />
               </svg>
             </Link>
-            {/* The call sample section ("Hear it") further down the page. */}
-            <Link className="hx-btn hx-btn-g" href="/#sample">
+            {/* Same-page anchor to the call sample section; the smooth scroll
+                comes from scroll-behavior (off under reduced motion). */}
+            <a className="hx-btn hx-btn-g" href="#sample">
               <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M8 5v14l11-7z" />
               </svg>
               {h.ctaSecondary}
-            </Link>
+            </a>
           </div>
         </div>
       </div>

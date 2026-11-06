@@ -50,6 +50,14 @@
   background: var(--blob2);
   animation: float2 28s ease-in-out infinite alternate;
 }
+/* Home: the hero has its own single glow. b1 would double it; b2 moves below
+   the hero (max 920 + 96px) and its blur, so no glow crosses the hero's edge. */
+.bf:has(.hx) .b1 {
+  display: none;
+}
+.bf:has(.hx) .b2 {
+  top: 1240px;
+}
 .bf .b3 {
   width: 580px;
   height: 580px;
@@ -376,12 +384,12 @@ html:has(.bf) {
 }
 
 /*
- * Home hero (components/marketing/hero.tsx), ported from
- * ../hero-reference.html (1440 × 900). It starts at the very top of the page,
- * under the floating header, fills the screen (760–920px) and keeps
- * --hx-after of empty space under the ribbons, so the next section's own
- * padding stays as it was. The glow, grid and base colour fade out into the
- * page background (--bg) over the last 280px: no seam.
+ * Home hero (components/marketing/hero.tsx), 1440 × 900 design. It starts at
+ * the very top of the page, under the floating header, fills the screen
+ * (760–920px) and keeps --hx-after of empty space under the ribbons, so the
+ * next section's own padding stays as it was. The page background is --bg;
+ * the one radial glow is masked out over the last 280px: no seam. No
+ * shadows or glows anywhere in the hero.
  */
 .bf .hx {
   --hx-after: 96px;
@@ -401,17 +409,10 @@ html:has(.bf) {
   inset: 0;
   z-index: -1;
   pointer-events: none;
-  background-color: var(--bg);
-  background-image:
-    radial-gradient(55% 55% at 88% 12%, var(--hero-glow) 0%, transparent 70%),
-    radial-gradient(40% 40% at 6% 86%, var(--hero-glow2) 0%, transparent 70%),
-    linear-gradient(var(--hero-grid) 1px, transparent 1px),
-    linear-gradient(90deg, var(--hero-grid) 1px, transparent 1px);
-  background-size:
-    auto,
-    auto,
-    72px 72px,
-    72px 72px;
+  /* One soft radial, top right; no grid, no other glow. The page's film grain
+     (background-fx.tsx) shows through, so the hero joins the next section
+     without a seam; the page-wide blobs are kept out of the hero (.b1/.b2). */
+  background: radial-gradient(60% 60% at 88% 8%, var(--hero-glow) 0%, transparent 70%);
   -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 280px), transparent);
   mask-image: linear-gradient(to bottom, #000 calc(100% - 280px), transparent);
 }
@@ -447,7 +448,6 @@ html:has(.bf) {
   height: 8px;
   border-radius: 50%;
   background: var(--green-ink);
-  box-shadow: 0 0 10px var(--green-ink);
 }
 .bf .hx-title {
   margin: 0;
@@ -477,7 +477,6 @@ html:has(.bf) {
   vertical-align: middle;
   line-height: 1.05;
   white-space: nowrap;
-  box-shadow: 0 0 50px rgba(24, 117, 83, 0.5);
 }
 .bf .hx-bars {
   display: inline-flex;
@@ -542,7 +541,6 @@ html:has(.bf) {
   font-weight: 700;
   background: var(--green);
   color: var(--hero-on-btn);
-  box-shadow: 0 10px 40px rgba(24, 117, 83, 0.5);
 }
 .bf .hx-btn-p:hover {
   background: var(--green-hi);
@@ -553,7 +551,7 @@ html:has(.bf) {
 }
 .bf .hx-btn-g {
   border: 1px solid var(--hero-btn-line);
-  background: rgba(26, 27, 27, 0.6);
+  background: var(--hero-bar);
   color: var(--hero-ink);
 }
 .bf .hx-btn-g:hover {
@@ -586,17 +584,15 @@ html:has(.bf) {
   height: 60px;
   background: var(--green);
   transform: rotate(2.2deg);
-  box-shadow: 0 0 60px rgba(24, 117, 83, 0.55);
 }
 .bf .hx-rib-d {
   top: 34px;
   height: 96px;
   box-sizing: border-box;
   background: var(--surface);
-  border-top: 1px solid rgba(99, 213, 165, 0.25);
-  border-bottom: 1px solid rgba(99, 213, 165, 0.12);
+  border-top: 1px solid var(--hero-line);
+  border-bottom: 1px solid var(--hero-line);
   transform: rotate(-1.6deg);
-  box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.45);
 }
 .bf .hx-track {
   display: flex;

@@ -3,10 +3,10 @@
 @import "./landing.css" layer(components);
 
 /*
- * Tailwind colours point at the theme tokens in tokens.css, so every
- * utility (bg-surface, text-muted, border-line …) follows light/dark mode.
- * Contrast (light / dark): ink/bg 14.3 / 16.0, muted/bg 5.3 / 7.7,
- * on-brand/brand 7.4 / 5.2, accent/bg 7.1 / 10.3, warn/warn-soft 4.5 / 6.3.
+ * Tailwind colours point at the tokens in tokens.css (dark only), so every
+ * utility (bg-surface, text-muted, border-line …) uses the same palette.
+ * Contrast: ink/bg 16.0, muted/bg 7.7, on-brand/brand 5.2, accent/bg 10.3,
+ * warn/warn-soft 6.3.
  */
 @theme inline {
   --color-canvas: var(--bg);

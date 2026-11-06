@@ -50,3 +50,6 @@ graphify-out/
 
 # agent scratch
 .superpowers/
+
+# QA test logins written by scripts/seed-test-accounts.ts
+.env.test-accounts.local

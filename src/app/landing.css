@@ -50,6 +50,14 @@
   background: var(--blob2);
   animation: float2 28s ease-in-out infinite alternate;
 }
+/* Home: the hero has its own single glow. b1 would double it; b2 moves below
+   the hero (max 920 + 96px) and its blur, so no glow crosses the hero's edge. */
+.bf:has(.hx) .b1 {
+  display: none;
+}
+.bf:has(.hx) .b2 {
+  top: 1240px;
+}
 .bf .b3 {
   width: 580px;
   height: 580px;
@@ -90,104 +98,70 @@
   padding: 0 var(--gutter);
 }
 
-/* Native scrolling; anchors land below the sticky header. */
+/* Native scrolling; anchors land below the floating header (24 + 68 + 20). */
 html:has(.bf) {
   scroll-behavior: smooth;
-  scroll-padding-top: 96px;
+  scroll-padding-top: 112px;
 }
 
-/* Header: sticky on every size, over a blurred strip of the page. */
+/*
+ * Header: a floating bar (../hero-reference.html), sticky --hdr-top from the
+ * top on every page. The wrapper keeps its place in the flow (--hdr-top +
+ * --hdr-h); the home hero pulls itself up under it so its glow runs behind.
+ * Inner padding: --hdr-pl / --hdr-pr; the hero text lines up with the logo.
+ */
+.bf {
+  --hdr-top: 24px;
+  --hdr-h: 68px;
+  --hdr-gap: 24px; /* smallest distance from the screen edge */
+  --hdr-pl: 24px;
+  --hdr-pr: 12px;
+  --hdr-w: min(1176px, calc(100% - 2 * var(--hdr-gap)));
+}
 .bf .bf-header-bar {
   position: sticky;
-  top: 0;
+  top: var(--hdr-top);
   z-index: 40;
-  background: color-mix(in srgb, var(--bg) 82%, transparent);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border-bottom: 1px solid color-mix(in srgb, var(--line2) 60%, transparent);
+  margin-top: var(--hdr-top);
+  height: var(--hdr-h);
+  /* Only the bar itself takes clicks, not the empty strip beside it. */
+  pointer-events: none;
+  transition: transform 0.2s var(--ease);
 }
-.bf .hdesk {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-}
-.bf .menu-btn {
-  display: none;
-  align-items: center;
-  justify-content: center;
-  width: 44px;
-  height: 44px;
-  border-radius: 12px;
-  border: 1px solid var(--line2);
-  color: var(--ink);
-  background: transparent;
-  cursor: pointer;
-}
-.bf .menu-btn:hover {
-  background: var(--surface);
-}
-.bf .menu-sheet {
-  margin: 0 0 0 auto;
-  height: 100dvh;
-  max-height: none;
-  width: min(360px, 100vw);
-  padding: 0;
-  border: 0;
-  border-left: 1px solid var(--line2);
-  background: var(--bg);
-  color: var(--ink);
-}
-.bf .menu-sheet::backdrop {
-  background: rgb(0 0 0 / 0.45);
-}
-.bf .menu-inner {
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-  padding: 18px var(--gutter) 32px;
-}
-.bf .menu-top {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-.bf .menu-title {
-  font-weight: 700;
-}
-.bf .menu-links {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-.bf .menu-links a {
-  display: block;
-  padding: 14px 4px;
-  font-size: 18px;
-  font-weight: 600;
-  color: var(--ink);
-  border-bottom: 1px solid var(--line2);
-}
-.bf .menu-tools {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-.bf .menu-ctas {
-  display: grid;
-  gap: 10px;
+/* Scrolled > 8px (header-bar.tsx): the bar moves up to 12px from the top. */
+.bf .bf-header-bar[data-scrolled] {
+  transform: translateY(calc(12px - var(--hdr-top)));
 }
 .bf .bf-header {
-  display: flex;
+  box-sizing: border-box;
+  pointer-events: auto;
+  width: var(--hdr-w);
+  height: var(--hdr-h);
+  margin: 0 auto;
+  padding: 0 var(--hdr-pr) 0 var(--hdr-pl);
+  /* Logo | centred nav | actions. The side columns never shrink below their
+     content, so on narrow screens the nav moves off-centre instead of overlapping. */
+  display: grid;
+  grid-template-columns: minmax(max-content, 1fr) auto minmax(max-content, 1fr);
   align-items: center;
-  justify-content: space-between;
   gap: 16px;
-  height: 84px;
+  border-radius: 18px;
+  /* Opaque: nothing shows through the bar. */
+  background: var(--hero-bar);
+  border: 1px solid var(--hero-bar-line);
+  box-shadow: var(--hero-shadow);
+  color: var(--hero-ink);
+}
+.bf .bf-header .hright {
+  grid-column: 3;
+  justify-self: end;
 }
 .bf .brand {
   display: flex;
   align-items: center;
   gap: 10px;
-  color: var(--ink);
+  flex: none;
+  justify-self: start;
 }
 .bf .brand-name {
   font-family: var(--serif);
@@ -195,25 +169,34 @@ html:has(.bf) {
   font-weight: 600;
   letter-spacing: -0.01em;
 }
+.bf .bf-header .brand-name {
+  font-family: var(--font-hero);
+  font-weight: 700;
+  letter-spacing: 0;
+  color: var(--hero-ink);
+}
 .bf .navlinks {
   display: flex;
   align-items: center;
-  gap: 32px;
+  gap: 34px;
 }
-.bf .hright {
+.bf .hright,
+.bf .hdesk {
   display: flex;
   align-items: center;
   gap: 14px;
 }
 .bf .navlink {
   position: relative;
-  color: var(--muted);
-  font-size: 14px;
+  color: var(--hero-muted);
+  font-size: 15px;
   font-weight: 500;
   padding: 6px 0;
+  white-space: nowrap;
 }
-.bf .navlink:hover {
-  color: var(--ink);
+.bf .navlink:hover,
+.bf .navlink[aria-current="page"] {
+  color: var(--hero-ink);
 }
 .bf .navlink::after {
   content: "";
@@ -229,6 +212,119 @@ html:has(.bf) {
 }
 .bf .navlink:hover::after {
   transform: scaleX(1);
+}
+.bf .hsignin {
+  padding: 10px 4px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--hero-ink);
+  white-space: nowrap;
+}
+.bf .hsignin:hover {
+  color: var(--green-ink);
+}
+.bf .hstart {
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  height: 46px;
+  padding: 0 22px;
+  border-radius: 12px;
+  background: var(--green);
+  color: var(--hero-on-btn);
+  font-size: 15px;
+  font-weight: 700;
+  white-space: nowrap;
+  transition: background 0.25s;
+}
+.bf .hstart:hover {
+  background: var(--green-hi);
+  color: var(--hero-on-btn);
+}
+.bf .menu-btn {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  border: 1px solid var(--hero-bar-line);
+  color: var(--hero-ink);
+  background: transparent;
+  cursor: pointer;
+}
+.bf .menu-btn:hover {
+  background: var(--bg);
+}
+/* Mobile menu: an opaque floating panel in the header's colours. */
+.bf .menu-sheet {
+  box-sizing: border-box;
+  margin: 12px 12px auto auto;
+  width: min(360px, calc(100vw - 24px));
+  /* fit-content, not auto: a modal dialog has both insets set and would stretch. */
+  height: fit-content;
+  max-height: calc(100dvh - 24px);
+  padding: 0;
+  overflow: auto;
+  border: 1px solid var(--hero-bar-line);
+  border-radius: 18px;
+  background: var(--hero-bar);
+  box-shadow: var(--hero-shadow);
+  color: var(--hero-ink);
+}
+.bf .menu-sheet::backdrop {
+  background: rgb(0 0 0 / 0.55);
+}
+.bf .menu-inner {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 8px 8px 20px 20px;
+}
+.bf .menu-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.bf .menu-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.bf .menu-brand .brand-name {
+  font-family: var(--font-hero);
+  font-weight: 700;
+  letter-spacing: 0;
+}
+.bf .menu-links {
+  list-style: none;
+  margin: 0;
+  padding: 0 12px 0 0;
+}
+.bf .menu-links a {
+  display: block;
+  padding: 13px 4px;
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--hero-ink);
+  border-bottom: 1px solid var(--hero-line);
+}
+.bf .menu-tools {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.bf .menu-ctas {
+  display: grid;
+  gap: 10px;
+  padding-right: 12px;
+}
+.bf .menu-ctas .bf-btn {
+  border-radius: 12px;
+}
+.bf .menu-ctas .bf-btn-g {
+  border-color: var(--hero-btn-line);
 }
 
 /* Buttons */
@@ -271,11 +367,6 @@ html:has(.bf) {
   color: var(--ink);
   border-color: var(--ink);
 }
-.bf .bf-btn-sm {
-  min-height: 44px;
-  padding: 0 18px;
-  font-size: 14px;
-}
 .bf .eyebrow {
   display: inline-flex;
   align-items: center;
@@ -292,107 +383,299 @@ html:has(.bf) {
   background: currentColor;
 }
 
-/* Hero */
-.bf .hero-sec {
-  /* 140, not 96: the hero aligns tops, so this keeps the text where it sat
-     when the taller call card set the row height. */
-  padding-top: 140px;
-  padding-bottom: 136px;
-}
-.bf .hero {
-  display: grid;
-  grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr);
-  gap: 64px;
-  /* Tops line up: the call card starts level with the eyebrow. */
-  align-items: start;
-}
 /*
- * Hero headline (components/marketing/hero-headline.tsx), ported from
- * ../hero-headline-reference.html. Letters settle into place (24 ms apart),
- * then a glint sweeps the green phrase every 3.6 s. Everything in the hero is
- * visible from the first paint (opacity 1, no blur): only transform animates,
- * so the server HTML is readable at once and LCP is not delayed.
- * --end / --after are set inline by the component. No lines on the text.
+ * Home hero (components/marketing/hero.tsx), 1440 × 900 design. It starts at
+ * the very top of the page, under the floating header, fills the screen
+ * (760–920px) and keeps --hx-after of empty space under the ribbons, so the
+ * next section's own padding stays as it was. The page background is --bg;
+ * the one radial glow is masked out over the last 280px: no seam. No
+ * shadows or glows anywhere in the hero.
  */
-.bf .hero .eyebrow {
+.bf .hx {
+  --hx-after: 96px;
+  position: relative;
+  isolation: isolate;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  margin-top: calc(-1 * (var(--hdr-top) + var(--hdr-h)));
+  min-height: calc(clamp(760px, 100svh, 920px) + var(--hx-after));
+  padding: 180px 0 var(--hx-after);
+  overflow-x: clip;
+  color: var(--hero-ink);
+}
+.bf .hx-bg {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  /* One soft radial, top right; no grid, no other glow. The page's film grain
+     (background-fx.tsx) shows through, so the hero joins the next section
+     without a seam; the page-wide blobs are kept out of the hero (.b1/.b2). */
+  background: radial-gradient(60% 60% at 88% 8%, var(--hero-glow) 0%, transparent 70%);
+  -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 280px), transparent);
+  mask-image: linear-gradient(to bottom, #000 calc(100% - 280px), transparent);
+}
+.bf .hx-in {
+  box-sizing: border-box;
+  width: var(--hdr-w);
+  margin: 0 auto 64px;
+  /* +1px: the header's border, so the text starts exactly under the logo. */
+  padding: 0 calc(var(--hdr-pr) + 1px) 0 calc(var(--hdr-pl) + 1px);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 30px;
+}
+.bf .hx-eyebrow {
+  box-sizing: border-box;
+  min-height: 34px;
+  padding: 6px 14px;
+  display: inline-flex;
+  align-items: center;
   gap: 10px;
+  border-radius: 999px;
+  background: rgba(99, 213, 165, 0.08);
+  border: 1px solid rgba(99, 213, 165, 0.26);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--green-ink);
 }
-.bf .hero .eyebrow::before {
-  content: none;
+.bf .hx-eyebrow i {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--green-ink);
 }
-.bf .hero .eyebrow i {
+.bf .hx-title {
+  margin: 0;
+  font-family: var(--font-hero);
+  font-weight: 600;
+  font-size: clamp(48px, 6.4vw, 92px);
+  line-height: 1.04;
+  letter-spacing: -0.03em;
+  color: var(--hero-ink);
+}
+.bf .hx-l1 {
+  display: block;
+}
+.bf .hx-title em {
+  font-style: italic;
+  color: var(--green-ink);
+}
+/* The pill and its mini waveform scale with the headline (92px = 1em). */
+.bf .hx-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.15em;
+  padding: 0.02em 0.28em 0.11em;
+  border-radius: 999px;
+  background: var(--green);
+  color: var(--hero-ink);
+  vertical-align: middle;
+  line-height: 1.05;
+  white-space: nowrap;
+}
+.bf .hx-bars {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.054em;
+  height: 0.52em;
+}
+.bf .hx-bars i {
+  width: 0.065em;
+  height: 0.2em;
+  border-radius: 0.033em;
+  background: var(--green-ink);
+}
+.bf .hx-bars i:nth-child(2) { height: 0.435em; }
+.bf .hx-bars i:nth-child(3) { height: 0.283em; }
+.bf .hx-bars i:nth-child(4) { height: 0.5em; }
+.bf .hx-bars i:nth-child(5) { height: 0.217em; }
+.bf .hx-row {
+  align-self: stretch;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px 40px;
+  margin-top: 40px;
+}
+.bf .hx-sub {
+  flex: 1 1 360px;
+  max-width: 520px;
+  margin: 0;
+  font-size: 19px;
+  line-height: 1.6;
+  color: var(--hero-muted);
+}
+.bf .hx-ctas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.bf .hx-btn {
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  height: 58px;
+  padding: 0 26px;
+  border-radius: 14px;
+  font-size: 16px;
+  font-weight: 600;
+  white-space: nowrap;
+  transition:
+    background 0.25s,
+    border-color 0.25s;
+}
+.bf .hx-btn svg {
+  flex: none;
+  transition: transform 0.3s var(--ease);
+}
+.bf .hx-btn-p {
+  padding: 0 30px;
+  font-weight: 700;
+  background: var(--green);
+  color: var(--hero-on-btn);
+}
+.bf .hx-btn-p:hover {
+  background: var(--green-hi);
+  color: var(--hero-on-btn);
+}
+.bf .hx-btn-p:hover svg {
+  transform: translateX(3px);
+}
+.bf .hx-btn-g {
+  border: 1px solid var(--hero-btn-line);
+  background: var(--hero-bar);
+  color: var(--hero-ink);
+}
+.bf .hx-btn-g:hover {
+  border-color: var(--hero-muted);
+  color: var(--hero-ink);
+}
+
+/*
+ * Crossing ribbons (decorative, aria-hidden). Each track holds its list four
+ * times; translateX(±50%) moves exactly one half, so the loop has no seam.
+ * Item spacing is padding/margin (not flex gap) for the same reason.
+ * Hover pauses them; reduced motion stops them (rule at the end of the file).
+ */
+.bf .hx-ribbons {
+  position: relative;
+  flex: none;
+  margin-top: auto;
+  height: 152px; /* the dark ribbon's bottom, including its tilt */
+}
+.bf .hx-rib {
+  position: absolute;
+  left: -60px;
+  right: -60px;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+}
+.bf .hx-rib-g {
+  top: 0;
+  height: 60px;
+  background: var(--green);
+  transform: rotate(2.2deg);
+}
+.bf .hx-rib-d {
+  top: 34px;
+  height: 96px;
+  box-sizing: border-box;
+  background: var(--surface);
+  border-top: 1px solid var(--hero-line);
+  border-bottom: 1px solid var(--hero-line);
+  transform: rotate(-1.6deg);
+}
+.bf .hx-track {
+  display: flex;
+  flex: none;
+  width: max-content;
+  white-space: nowrap;
+  animation: hx-left 50s linear infinite;
+}
+.bf .hx-track-r {
+  animation: hx-right 40s linear infinite;
+}
+.bf .hx-rib:hover .hx-track {
+  animation-play-state: paused;
+}
+.bf .hx-word {
+  display: flex;
+  align-items: center;
+  gap: 44px;
+  padding-right: 44px;
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--hero-ink);
+}
+.bf .hx-word i {
   flex: none;
   width: 7px;
   height: 7px;
   border-radius: 50%;
   background: var(--green-ink);
 }
-.bf .headline {
-  margin: 22px 0 0;
-  max-width: 860px;
-  font-family: var(--font-display);
-  font-weight: 800;
-  font-size: clamp(40px, 6vw, 82px);
-  line-height: 1.06;
-  letter-spacing: -0.02em;
-  color: var(--ink);
-  text-wrap: balance;
-}
-/*
- * Glossy look of the brand star (SVG filter in hero-headline.tsx). The green
- * phrase takes the star's deep green (--gloss) so the white highlights read;
- * overriding --green-ink and --glint here also feeds the hl-glint keyframes.
- */
-.bf .headline {
-  --green-ink: var(--gloss);
-  --glint: var(--gloss-glint);
-}
-.bf .headline .gloss {
-  display: block;
-  filter: url(#bf-gloss);
-}
-.bf .headline .gloss-defs {
-  position: absolute;
-  width: 0;
-  height: 0;
-  overflow: hidden;
-}
-.bf .headline .w {
-  display: inline-block;
-  white-space: nowrap;
-}
-.bf .headline .c {
-  display: inline-block;
-  animation: hl-in 0.7s var(--out) both;
-  animation-delay: calc(150ms + var(--i) * 24ms);
-}
-.bf .headline .g {
-  color: var(--green-ink);
-  font-weight: 800;
-}
-.bf .headline .g.c {
-  animation:
-    hl-in 0.7s var(--out) both,
-    hl-glint 3.6s ease-in-out infinite;
-  animation-delay:
-    calc(150ms + var(--i) * 24ms),
-    calc(var(--end) + var(--j) * 45ms);
-}
-.bf .lede {
-  font-size: 18px;
-  color: var(--muted);
-  margin: 26px 0 40px;
-  max-width: 540px;
-  animation: hl-rise 0.6s var(--ease) both;
-  animation-delay: min(var(--after), 300ms);
-}
-.bf .ctas {
+.bf .hx-card {
+  box-sizing: border-box;
+  flex: none;
+  height: 64px;
+  margin-left: 14px;
+  padding: 0 12px;
   display: flex;
-  flex-wrap: wrap;
+  align-items: center;
   gap: 12px;
-  animation: hl-rise 0.6s var(--ease) both;
-  animation-delay: min(calc(var(--after) + 120ms), 420ms);
+  border-radius: 14px;
+  background: var(--green-soft);
+  border: 1px solid rgba(99, 213, 165, 0.14);
 }
+.bf .hx-check {
+  flex: none;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--green);
+  color: var(--hero-ink);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.bf .hx-card-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.3;
+}
+.bf .hx-card-text b {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--hero-ink);
+}
+.bf .hx-card-text span {
+  font-size: 12px;
+  color: var(--green-ink);
+}
+.bf .hx-time {
+  height: 30px;
+  padding: 0 10px;
+  display: flex;
+  align-items: center;
+  border-radius: 9px;
+  background: var(--green);
+  color: var(--hero-ink);
+  font-size: 14px;
+  font-weight: 700;
+}
+@keyframes hx-left { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+@keyframes hx-right { from { transform: translateX(-50%); } to { transform: translateX(0); } }
+
 .bf .bf-card {
   background: color-mix(in srgb, var(--surface) 88%, transparent);
   backdrop-filter: blur(12px);
@@ -1317,30 +1600,325 @@ html:has(.bf) {
   max-width: 680px;
 }
 
-/* Agent audio sample (components/marketing/agent-sample.tsx) */
-.bf .sample {
+/*
+ * Call sample, "Hear it" (components/marketing/agent-sample.tsx +
+ * call-sample.tsx), 1440 x 820 design: phone mockup left, eyebrow, h2 and
+ * transcript right, vertically centred. No glows or shadows. Under 768px:
+ * heading, then the phone (260px wide), then the transcript.
+ */
+.bf .cs-grid,
+.bf .cs-grid *,
+.bf .cs-grid *::before,
+.bf .cs-grid *::after {
+  box-sizing: border-box;
+}
+.bf .cs-grid {
   display: grid;
-  gap: 16px;
-  padding: 28px;
-  border-radius: 20px;
-  max-width: 820px;
+  grid-template-columns: 300px minmax(0, 1fr);
+  grid-template-rows: 1fr auto auto 1fr;
+  grid-template-areas:
+    "stage ."
+    "stage head"
+    "stage script"
+    "stage .";
+  column-gap: 88px;
+  color: var(--hero-ink);
 }
-.bf .sample audio {
-  width: 100%;
+.bf .cs-head {
+  grid-area: head;
 }
-.bf .sample-lines {
+.bf .cs-title {
+  margin: 18px 0 0;
+  font-family: var(--font-hero);
+  font-weight: 600;
+  font-size: clamp(34px, 3.5vw, 50px);
+  line-height: 1.12;
+  letter-spacing: -0.02em;
+  color: var(--hero-ink);
+}
+.bf .cs-title em {
+  font-style: italic;
+  color: var(--green-ink);
+}
+
+/* Phone (300 x 620); the play button overlaps its bottom edge. */
+.bf .cs-stage {
+  grid-area: stage;
+  align-self: center;
+  justify-self: center;
+  position: relative;
+  padding-bottom: 26px;
+}
+.bf .cs-phone {
+  width: 300px;
+  height: 620px;
+  padding: 9px;
+  border-radius: 46px;
+  background: var(--hero-phone);
+  border: 1px solid var(--hero-line);
+}
+.bf .cs-screen {
+  position: relative;
+  height: 100%;
+  padding: 78px 20px 0;
+  border-radius: 38px;
+  background: var(--hero-bar);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+.bf .cs-island {
+  position: absolute;
+  top: 14px;
+  left: 50%;
+  width: 88px;
+  height: 24px;
+  border-radius: 999px;
+  background: var(--hero-phone);
+  transform: translateX(-50%);
+}
+.bf .cs-logo {
+  margin-bottom: 18px;
+}
+.bf .cs-status {
   margin: 0;
-  display: grid;
-  gap: 8px;
-  font-size: 15px;
-}
-.bf .sample-lines dt {
-  font-weight: 700;
   font-size: 13px;
-  color: var(--muted);
+  font-weight: 600;
+  color: var(--green-ink);
 }
-.bf .sample-lines dd {
-  margin: 0 0 6px;
+.bf .cs-number {
+  margin: 10px 0 0;
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  word-spacing: 0.1em;
+  color: var(--hero-ink);
+  white-space: nowrap;
+}
+.bf .cs-timer {
+  margin: 6px 0 0;
+  font-size: 15px;
+  font-variant-numeric: tabular-nums;
+  color: var(--hero-muted);
+}
+.bf .cs-wave {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 48px;
+  margin-top: 44px;
+}
+.bf .cs-wave i {
+  width: 4px;
+  border-radius: 2px;
+  background: var(--hero-wave);
+  transition: background 0.2s;
+}
+.bf .cs-wave i[data-lit] {
+  background: var(--green-ink);
+}
+.bf .cs-booking {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: 50px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px 10px 10px;
+  border-radius: 16px;
+  background: var(--green-soft);
+  border: 1px solid rgba(99, 213, 165, 0.16);
+  text-align: left;
+}
+.bf .cs-check {
+  flex: none;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--green);
+  color: var(--hero-on-btn);
+}
+.bf .cs-service {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--hero-ink);
+}
+.bf .cs-btime {
+  font-size: 14px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--green-ink);
+}
+
+/* Play button (52px pill) and its "coming soon" tooltip. */
+.bf .cs-ctl {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  transform: translateX(-50%);
+}
+.bf .cs-play {
+  height: 52px;
+  padding: 0 22px 0 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--green);
+  color: var(--hero-on-btn);
+  font: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background 0.25s;
+}
+.bf .cs-play:hover {
+  background: var(--green-hi);
+}
+.bf .cs-play[aria-disabled="true"] {
+  cursor: not-allowed;
+  background: var(--green);
+  opacity: 0.6;
+}
+.bf .cs-play:focus-visible {
+  border-radius: 999px;
+}
+.bf .cs-play-icon {
+  flex: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--hero-ink);
+  color: var(--green);
+}
+.bf .cs-play-dur {
+  font-variant-numeric: tabular-nums;
+}
+.bf .cs-tip {
+  position: absolute;
+  bottom: calc(100% + 10px);
+  left: 50%;
+  padding: 6px 12px;
+  border-radius: 10px;
+  background: var(--hero-bar);
+  border: 1px solid var(--hero-line);
+  color: var(--hero-ink);
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  transform: translateX(-50%);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s;
+}
+.bf .cs-ctl:hover .cs-tip,
+.bf .cs-play:focus-visible + .cs-tip {
+  opacity: 1;
+}
+
+/* Transcript: a 1px rule on the left; the playing line gets a 2px accent. */
+.bf .cs-script {
+  grid-area: script;
+  margin-top: 40px;
+}
+.bf .cs-lines {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 22px;
+  border-left: 1px solid var(--hero-line);
+}
+.bf .cs-lines li {
+  position: relative;
+  padding-left: 28px;
+}
+.bf .cs-lines li[aria-current]::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -1.5px;
+  width: 2px;
+  background: var(--green-ink);
+}
+.bf .cs-who {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+.bf .cs-agent .cs-who {
+  color: var(--green-ink);
+}
+.bf .cs-caller .cs-who {
+  color: var(--hero-muted);
+}
+.bf .cs-lines q {
+  font-family: var(--font-hero);
+  font-size: 22px;
+  line-height: 1.45;
+  quotes: "\201C" "\201D" "\2018" "\2019";
+}
+.bf .cs-lines q:lang(ka) {
+  quotes: "\201E" "\201C" "\201A" "\2018";
+}
+.bf .cs-agent q {
+  color: var(--hero-ink);
+}
+.bf .cs-caller q {
+  color: var(--hero-ink2);
+}
+
+/* Tablet: narrower gap; the phone is drawn at 260px wide. */
+@media (max-width: 1023px) {
+  .bf .cs-grid {
+    grid-template-columns: 260px minmax(0, 1fr);
+    column-gap: 48px;
+  }
+  .bf .cs-phone {
+    zoom: 0.8667;
+  }
+}
+/* Phones: heading, phone, transcript. */
+@media (max-width: 767px) {
+  .bf .cs-grid {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: none;
+    grid-template-areas:
+      "head"
+      "stage"
+      "script";
+    row-gap: 40px;
+  }
+  .bf .cs-script {
+    margin-top: 0;
+  }
+  .bf .cs-lines {
+    gap: 18px;
+  }
+  .bf .cs-lines li {
+    padding-left: 20px;
+  }
+  .bf .cs-lines q {
+    font-size: 19px;
+  }
 }
 
 @supports (animation-timeline: view()) {
@@ -1387,10 +1965,7 @@ html:has(.bf) {
 @keyframes stroke { to { stroke-dashoffset: 0; } }
 @keyframes float1 { from { transform: translate(0, 0) scale(1); } to { transform: translate(-180px, 140px) scale(1.15); } }
 @keyframes float2 { from { transform: translate(0, 0) scale(1); } to { transform: translate(200px, -150px) scale(1.1); } }
-@keyframes hl-in { from { transform: translateY(0.18em) rotate(3deg); } to { transform: none; } }
-@keyframes hl-rise { from { transform: translateY(10px); } to { transform: none; } }
 @keyframes nudge { from { transform: translateY(10px); } to { transform: none; } }
-@keyframes hl-glint { 0%, 55%, 100% { color: var(--green-ink); } 68% { color: var(--glint); } }
 
 @media (prefers-reduced-motion: reduce) {
   .bf *,
@@ -1398,16 +1973,6 @@ html:has(.bf) {
   .bf *::after {
     animation: none !important;
     transition: none !important;
-  }
-  /* Hero: show the final state at once (green phrase static, no glint). */
-  .bf .hero .eyebrow,
-  .bf .lede,
-  .bf .ctas,
-  .bf .headline .c,
-  .bf .headline .g.c {
-    opacity: 1;
-    transform: none;
-    filter: none;
   }
   .bf .check path {
     stroke-dashoffset: 0;
@@ -1428,7 +1993,6 @@ html:has(.bf) {
 }
 
 @media (max-width: 960px) {
-  .bf .hero,
   .bf .split,
   .bf .closer {
     grid-template-columns: minmax(0, 1fr);
@@ -1440,17 +2004,10 @@ html:has(.bf) {
     grid-template-columns: minmax(0, 1fr);
     gap: 36px;
   }
-  .bf .hdesk {
-    display: none;
-  }
   .bf .plans {
     grid-template-columns: minmax(0, 1fr);
   }
-  .bf .menu-btn {
-    display: inline-flex;
-  }
-  .bf .track,
-  .bf .navlinks {
+  .bf .track {
     display: none;
   }
   .bf .item {
@@ -1467,16 +2024,6 @@ html:has(.bf) {
   .bf {
     --gutter: 16px;
   }
-  .bf .hright {
-    gap: 8px;
-  }
-  .bf .hright .bf-btn-sm {
-    padding: 0 14px;
-  }
-  .bf .hero-sec {
-    padding-top: 48px;
-    padding-bottom: 96px;
-  }
   .bf .sec {
     padding-bottom: 96px;
   }
@@ -1484,9 +2031,148 @@ html:has(.bf) {
     padding: 16px;
   }
 }
-/* Narrow phones: sign-up stays reachable through the hero and the sign-in page. */
-@media (max-width: 420px) {
-  .bf .hright .bf-btn-sm {
+
+/* Header: tighter nav before it collapses into the menu button. */
+@media (max-width: 1099px) {
+  .bf .navlinks {
+    gap: 22px;
+  }
+  .bf .navlink,
+  .bf .hsignin {
+    font-size: 14px;
+  }
+  .bf .hright,
+  .bf .hdesk {
+    gap: 10px;
+  }
+}
+/* 900–1023px: the Georgian nav only just fits; tighten every gap. */
+@media (max-width: 1023px) {
+  .bf .bf-header {
+    gap: 10px;
+  }
+  .bf .navlinks {
+    gap: 14px;
+  }
+  .bf .hright,
+  .bf .hdesk {
+    gap: 8px;
+  }
+  .bf .hstart {
+    padding: 0 16px;
+  }
+}
+/* Header under 900px: logo, "start" and the menu button, 12px from the edges. */
+@media (max-width: 899px) {
+  .bf {
+    --hdr-top: 12px;
+    --hdr-h: 60px;
+    --hdr-gap: 12px;
+    --hdr-pl: 14px;
+    --hdr-pr: 8px;
+  }
+  .bf .hdesk,
+  .bf .navlinks {
     display: none;
+  }
+  .bf .menu-btn {
+    display: inline-flex;
+  }
+  .bf .hright {
+    gap: 8px;
+  }
+  .bf .hstart {
+    height: 44px;
+    padding: 0 16px;
+    font-size: 14px;
+  }
+}
+/* Hero on phones: everything stacked, full-width 56px buttons, smaller ribbons. */
+@media (max-width: 767px) {
+  .bf .hx {
+    min-height: 0;
+    padding-top: calc(var(--hdr-top) + var(--hdr-h) + 44px);
+  }
+  .bf .hx-in {
+    width: auto;
+    margin: 0 0 56px;
+    padding: 0 calc(var(--hdr-gap) + var(--hdr-pl) + 1px);
+    gap: 22px;
+  }
+  .bf .hx-eyebrow {
+    font-size: 12px;
+    border-radius: 16px; /* may wrap to two lines on the narrowest phones */
+  }
+  .bf .hx-title {
+    font-size: clamp(44px, 12.3vw, 48px);
+  }
+  .bf .hx-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 28px;
+    width: 100%;
+    margin-top: 2px;
+  }
+  .bf .hx-sub {
+    flex: none;
+    font-size: 17px;
+  }
+  .bf .hx-ctas {
+    flex-direction: column;
+    gap: 10px;
+  }
+  /* Full width; long labels may wrap rather than push past the screen edge. */
+  .bf .hx-btn,
+  .bf .hx-btn-p {
+    width: 100%;
+    min-width: 0;
+    height: 56px;
+    padding: 0 20px;
+    white-space: normal;
+    text-align: center;
+    line-height: 1.25;
+  }
+  .bf .hx-ribbons {
+    height: 104px;
+  }
+  .bf .hx-rib-g {
+    height: 44px;
+    transform: rotate(1.2deg);
+  }
+  .bf .hx-rib-d {
+    top: 26px;
+    height: 72px;
+    transform: rotate(-1deg);
+  }
+  .bf .hx-word {
+    gap: 28px;
+    padding-right: 28px;
+    font-size: 14px;
+  }
+  .bf .hx-card {
+    height: 52px;
+    margin-left: 10px;
+    padding: 0 10px;
+    gap: 10px;
+    border-radius: 12px;
+  }
+  .bf .hx-check {
+    width: 28px;
+    height: 28px;
+  }
+  .bf .hx-check svg {
+    width: 12px;
+    height: 12px;
+  }
+  .bf .hx-card-text b {
+    font-size: 13px;
+  }
+  .bf .hx-card-text span {
+    font-size: 11px;
+  }
+  .bf .hx-time {
+    height: 26px;
+    padding: 0 8px;
+    font-size: 13px;
   }
 }

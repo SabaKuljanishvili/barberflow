@@ -1,5 +1,5 @@
 import Link from "@/components/locale-link";
-import { BrandMark } from "@/components/logo";
+import { AppLogo } from "./app-logo";
 import { getI18n } from "@/i18n/server";
 import { legalPages, marketingNav, site } from "@/lib/site";
 import { businessDetails } from "@/lib/env.server";
@@ -13,7 +13,7 @@ export async function SiteFooter() {
       <div className="fgrid">
         <div>
           <div className="row fbrand">
-            <BrandMark size={30} />
+            <AppLogo size={30} />
             <span className="brand-name">{site.name}</span>
           </div>
           <p className="p fdesc">{t.footer.tagline}</p>

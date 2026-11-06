@@ -37,25 +37,27 @@ export const en = {
   },
 
   home: {
-    eyebrow: "Voice booking for barbershops",
-    titleBefore: "Never miss ",
-    titleGreen: "another call",
-    titleAfter: ".",
-    lede: "DevskStudio answers your shop's phone, books appointments into each barber's calendar and texts clients reminders — so your team can stay on the floor.",
+    eyebrow: "Voice booking for barbershops · 24/7",
+    // Hero headline: line 1, then the italic green word and the "call" pill.
+    titleBefore: "Never miss",
+    titleGreen: "another",
+    titlePill: "call",
+    lede: "An AI receptionist that answers your shop's phone and fills the calendar for you.",
     ctaPrimary: "Set up your shop",
-    ctaSecondary: "Talk to us",
-    callStream: {
-      label: "Incoming calls answered by DevskStudio AI, each one turning into a booking",
-      brand: "DevskStudio AI",
-      brandSub: "Answers your calls · 24/7",
-      aiAnswering: "AI answering…",
-      calls: "Calls",
-      booked: "Booked",
-      incoming: "Incoming call",
+    ctaSecondary: "Listen",
+    // Decorative ribbons at the bottom of the hero (aria-hidden).
+    ribbons: {
+      words: [
+        "24/7",
+        "Georgian and English",
+        "No double bookings",
+        "SMS reminders",
+        "Manager and barber roles",
+        "Secure data",
+        "Automatic archive",
+        "First call — today",
+      ],
       bookedOn: "Booked · {date}",
-      missed: "Missed calls: {n}",
-      soundOn: "Turn sound on",
-      soundOff: "Turn sound off",
       services: ["Haircut", "Beard", "Fade", "Hair + beard", "Kids' cut"],
       barbers: ["Giorgi", "Luka", "Nika"],
     },
@@ -224,11 +226,17 @@ export const en = {
 
   sample: {
     eyebrow: "Hear it",
-    title: "A real booking call, in Georgian",
-    intro: "This is how the agent sounds to your clients. The transcript is below, translated.",
+    titleBefore: "A real booking call, ",
+    titleEm: "in Georgian",
     transcript: "Transcript",
     agent: "Agent",
     caller: "Client",
+    phoneLabel: "Phone screen: DevskStudio AI answers a call and books a haircut with Giorgi at 14:00.",
+    answering: "DevskStudio AI answering",
+    booking: "Haircut · Giorgi",
+    play: "Listen",
+    pause: "Pause",
+    soon: "Recording coming soon",
     lines: [
       { who: "agent", text: "Hello, you've reached Barber House. How can I help?" },
       { who: "caller", text: "I'd like a haircut tomorrow, at two." },
@@ -787,9 +795,6 @@ export const en = {
 
   // Passed to client components through I18nProvider; keep it small.
   client: {
-    theme: {
-      toggle: "Toggle theme (light / dark)",
-    },
     switcher: {
       label: "Language",
     },

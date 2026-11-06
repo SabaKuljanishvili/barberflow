@@ -40,8 +40,7 @@ export const ka: Dictionary = {
   home: {
     eyebrow: "ხმოვანი ჯავშნები ბარბერშოპებისთვის · 24/7",
     titleBefore: "აღარც ერთი",
-    titleGreen: "უპასუხო",
-    titlePill: "ზარი",
+    titleAccent: "უპასუხო ზარი.",
     lede: "AI ადმინისტრატორი, რომელიც თქვენი სალონის ტელეფონს პასუხობს და კალენდარს თავად ავსებს.",
     ctaPrimary: "დაარეგისტრირეთ სალონი",
     ctaSecondary: "მოისმინეთ",

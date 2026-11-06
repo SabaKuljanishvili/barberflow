@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { Dictionary } from "@/i18n/dictionaries/en";
+import { AmbientLayer, AmbientSpot } from "./ambient-spot";
 import { SCENES } from "./scenes";
 
 type Home = Dictionary["home"];
@@ -99,7 +100,11 @@ export function Features({ home }: { home: Home }) {
   const total = home.features.length;
 
   return (
-    <section id="features" className="wrap bf-cb sec">
+    <section id="features" className="wrap bf-cb sec amb-host">
+      <AmbientLayer>
+        <AmbientSpot color="green" size={780} opacity={0.2} duration={22} left={-300} top={150} />
+        <AmbientSpot color="mint" size={560} opacity={0.07} duration={28} right={-120} top={600} desktopOnly />
+      </AmbientLayer>
       <div ref={splitRef} className="split">
         <div ref={stickRef} className="stick">
           <div ref={headRef} className="stick-head">

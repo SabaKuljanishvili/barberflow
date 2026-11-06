@@ -32,18 +32,21 @@
   --out: cubic-bezier(0.16, 1, 0.3, 1);
 
   /*
-   * Floating header and home hero (../hero-reference.html). Contrast on --bg:
-   * hero-ink 17.6, hero-muted 7.4, green-ink 10.3; hero-ink on --green 5.5.
+   * Floating header, home hero and call sample section. Contrast on --bg:
+   * hero-ink 17.6, hero-ink2 12.1, hero-muted 7.4, green-ink 10.3; on
+   * --surface hero-muted 6.9; hero-ink/white on --green 5.5.
    */
   --hero-ink: #f3f7f4;
+  --hero-ink2: #c9cdcb;
   --hero-muted: #9fa3a1;
-  --hero-line: #2a2c2b;
+  --hero-line: #262928;
   --hero-btn-line: #2e3331;
-  --hero-bar: rgba(26, 27, 27, 0.72);
-  --hero-bar-line: rgba(99, 213, 165, 0.18);
-  --hero-glow: rgba(24, 117, 83, 0.42);
-  --hero-glow2: rgba(99, 213, 165, 0.1);
-  --hero-grid: rgba(243, 247, 244, 0.035);
+  --hero-bar: #1a1b1b;
+  --hero-bar-line: #262928;
+  --hero-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+  --hero-glow: rgba(24, 117, 83, 0.2);
+  --hero-phone: #0e0f0f;
+  --hero-wave: #3e6b57;
   --hero-on-btn: #ffffff;
   /* Headline and header logo only; body text stays Manrope / Noto Sans Georgian. */
   --font-hero: var(--font-serif-georgian), Georgia, serif;

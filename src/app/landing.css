@@ -118,6 +118,11 @@ html:has(.bf) {
   height: var(--hdr-h);
   /* Only the bar itself takes clicks, not the empty strip beside it. */
   pointer-events: none;
+  transition: transform 0.2s var(--ease);
+}
+/* Scrolled > 8px (header-bar.tsx): the bar moves up to 12px from the top. */
+.bf .bf-header-bar[data-scrolled] {
+  transform: translateY(calc(12px - var(--hdr-top)));
 }
 .bf .bf-header {
   box-sizing: border-box;
@@ -126,27 +131,29 @@ html:has(.bf) {
   height: var(--hdr-h);
   margin: 0 auto;
   padding: 0 var(--hdr-pr) 0 var(--hdr-pl);
-  display: flex;
+  /* Logo | centred nav | actions. The side columns never shrink below their
+     content, so on narrow screens the nav moves off-centre instead of overlapping. */
+  display: grid;
+  grid-template-columns: minmax(max-content, 1fr) auto minmax(max-content, 1fr);
   align-items: center;
-  justify-content: space-between;
   gap: 16px;
   border-radius: 18px;
+  /* Opaque: nothing shows through the bar. */
   background: var(--hero-bar);
   border: 1px solid var(--hero-bar-line);
-  box-shadow:
-    0 8px 50px rgba(99, 213, 165, 0.14),
-    0 0 0 1px rgba(255, 255, 255, 0.02),
-    inset 0 1px 0 rgba(255, 255, 255, 0.05);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
+  box-shadow: var(--hero-shadow);
   color: var(--hero-ink);
+}
+.bf .bf-header .hright {
+  grid-column: 3;
+  justify-self: end;
 }
 .bf .brand {
   display: flex;
   align-items: center;
   gap: 10px;
   flex: none;
-  color: var(--green-ink); /* the star outline */
+  justify-self: start;
 }
 .bf .brand-name {
   font-family: var(--serif);
@@ -220,7 +227,6 @@ html:has(.bf) {
   font-size: 15px;
   font-weight: 700;
   white-space: nowrap;
-  box-shadow: 0 6px 24px rgba(24, 117, 83, 0.55);
   transition: background 0.25s;
 }
 .bf .hstart:hover {
@@ -241,25 +247,22 @@ html:has(.bf) {
   cursor: pointer;
 }
 .bf .menu-btn:hover {
-  background: rgba(99, 213, 165, 0.08);
+  background: var(--bg);
 }
-/* Mobile menu: a floating panel in the header's colours. */
+/* Mobile menu: an opaque floating panel in the header's colours. */
 .bf .menu-sheet {
   box-sizing: border-box;
   margin: 12px 12px auto auto;
   width: min(360px, calc(100vw - 24px));
-  height: auto;
+  /* fit-content, not auto: a modal dialog has both insets set and would stretch. */
+  height: fit-content;
   max-height: calc(100dvh - 24px);
   padding: 0;
   overflow: auto;
   border: 1px solid var(--hero-bar-line);
   border-radius: 18px;
-  background: color-mix(in srgb, var(--surface) 94%, transparent);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-  box-shadow:
-    0 8px 50px rgba(99, 213, 165, 0.14),
-    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  background: var(--hero-bar);
+  box-shadow: var(--hero-shadow);
   color: var(--hero-ink);
 }
 .bf .menu-sheet::backdrop {
@@ -276,8 +279,15 @@ html:has(.bf) {
   align-items: center;
   justify-content: space-between;
 }
-.bf .menu-title {
+.bf .menu-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.bf .menu-brand .brand-name {
+  font-family: var(--font-hero);
   font-weight: 700;
+  letter-spacing: 0;
 }
 .bf .menu-links {
   list-style: none;
@@ -307,9 +317,6 @@ html:has(.bf) {
 }
 .bf .menu-ctas .bf-btn-g {
   border-color: var(--hero-btn-line);
-}
-.bf .menu-ctas .bf-btn-p {
-  box-shadow: 0 6px 24px rgba(24, 117, 83, 0.55);
 }
 
 /* Buttons */
@@ -1746,6 +1753,22 @@ html:has(.bf) {
   .bf .hright,
   .bf .hdesk {
     gap: 10px;
+  }
+}
+/* 900–1023px: the Georgian nav only just fits; tighten every gap. */
+@media (max-width: 1023px) {
+  .bf .bf-header {
+    gap: 10px;
+  }
+  .bf .navlinks {
+    gap: 14px;
+  }
+  .bf .hright,
+  .bf .hdesk {
+    gap: 8px;
+  }
+  .bf .hstart {
+    padding: 0 16px;
   }
 }
 /* Header under 900px: logo, "start" and the menu button, 12px from the edges. */

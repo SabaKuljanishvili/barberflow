@@ -38,10 +38,9 @@ export const en = {
 
   home: {
     eyebrow: "Voice booking for barbershops · 24/7",
-    // Hero headline: line 1, then the italic green word and the "call" pill.
+    // Hero headline: line 1, then line 2 in italic green (a waveform follows it).
     titleBefore: "Never miss",
-    titleGreen: "another",
-    titlePill: "call",
+    titleAccent: "another call.",
     lede: "An AI receptionist that answers your shop's phone and fills the calendar for you.",
     ctaPrimary: "Set up your shop",
     ctaSecondary: "Listen",

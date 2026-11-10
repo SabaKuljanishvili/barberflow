@@ -62,6 +62,21 @@
 - Added the browser voice agent described under Tech Stack. Twilio is now optional. Typecheck, lint, tests (167) and `next build` pass. Route guards were checked against `next start`: no header gives 403, no session gives 401, a foreign Origin gives 403.
 - Not yet tested end to end: there is no working dashboard login, and `.env.local` has no Azure key. To test, set `AZURE_SPEECH_KEY`/`AZURE_SPEECH_REGION`, log in with `next dev`, turn on the voice agent in Settings, then open `/dashboard/voice`.
 
+## Appointments page (2026-11-11, branch `appointments-redesign`)
+- Spec: `../appointments-reference.html`. `app/dashboard/appointments/page.tsx` (server) fetches and builds view models. The client parts live in `components/dashboard/appointments/`:
+  - `board.tsx`: context for the drawers, optimistic status, toasts, the "just booked" highlight and the N shortcut.
+  - `time-grid.tsx`: day view (barbers as columns) and week view (7 days; overlapping bookings sit side by side in lanes).
+  - `list-view.tsx`, `booking-drawer.tsx`, `details-drawer.tsx`, `menus.tsx` (status listbox, row ⋯ menu).
+  - `sheet.tsx`: the slide-over (focus trap, Esc, backdrop; full screen under 768px).
+- Pure logic and its tests: `lib/appointments-ui.ts` (barber colours, grid maths, lanes, slot chips, prefill, phone check, optimistic status reducer, URL view).
+- URL state: `?view=day|week|list&date=&barber=` (list: `range`, `status`, `limit`). Without a view: week on desktop, day on phones (User-Agent / `sec-ch-ua-mobile`).
+  - Old links keep working: `?status=`/`?range=` open the list, `?client=<id>` opens the drawer with that client, `?appt=<id>` opens the details.
+- Barber colours: `--barber-*` tokens, assigned by team order (role, then name); nothing is stored. Page colours are the `--ap-*` tokens (Tailwind `*-ap-*`). `--ap-faint` is #868b89, lifted from the reference's #6e7471 to reach 4.5:1.
+- Chrome ships no Georgian ICU data, so client components never call `Intl` for Georgian dates. The server passes `DayNames` and `formatDay()` builds the labels.
+- The drawer's time chips are every 30 minutes. A chip is available only when `availableSlots` (same engine as the voice agent) returned it for the chosen barber. `createAppointment` re-checks on submit; on failure the drawer shows the message and refetches.
+- Roles: barbers see every column but no filter chips. They book only their own chair (the drawer preselects them; empty slots only in their column) and see a read-only status pill on other barbers' bookings. Server actions and RLS are unchanged.
+- The page fills the viewport on desktop with `lg:h-[calc(100dvh-146px)]` (layout padding + top header). If the dashboard header height changes, update that number.
+
 ## Core Principles
 - Clean, modular, minimalist code structure.
 - Strict test coverage (Vitest). Before calling work done, run `npm run typecheck`, `npm test` and `npm run lint`.

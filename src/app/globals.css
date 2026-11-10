@@ -26,6 +26,27 @@
   --color-warn-soft: var(--warn-soft);
   --color-danger: var(--danger);
   --color-danger-soft: var(--danger-soft);
+  /* Appointments page (tokens.css --ap-*). */
+  --color-ap-bg: var(--ap-bg);
+  --color-ap-card: var(--ap-card);
+  --color-ap-row: var(--ap-row);
+  --color-ap-line: var(--ap-line);
+  --color-ap-line2: var(--ap-line2);
+  --color-ap-chip-line: var(--ap-chip-line);
+  --color-ap-drawer-line: var(--ap-drawer-line);
+  --color-ap-hour: var(--ap-hour);
+  --color-ap-closed: var(--ap-closed);
+  --color-ap-today: var(--ap-today);
+  --color-ap-sel: var(--ap-sel);
+  --color-ap-sel-line: var(--ap-sel-line);
+  --color-ap-backdrop: var(--ap-backdrop);
+  --color-ap-ink: var(--ap-ink);
+  --color-ap-ink2: var(--ap-ink2);
+  --color-ap-muted: var(--ap-muted);
+  --color-ap-faint: var(--ap-faint);
+  --color-ap-pending: var(--ap-pending);
+  --color-ap-noshow: var(--ap-noshow);
+  --color-ap-on-green: var(--ap-on-green);
 
   --font-sans: var(--font-manrope), var(--font-georgian), ui-sans-serif, system-ui, sans-serif;
   --font-serif: var(--font-noto-serif), var(--font-serif-georgian), Georgia, serif;
@@ -84,6 +105,38 @@ body {
 }
 @utility field-error {
   @apply mt-1 text-sm text-danger;
+}
+
+/* Appointments page: drawer entrance and the "just booked" highlight. */
+@keyframes ap-fade {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes ap-slide {
+  from {
+    transform: translateX(24px);
+    opacity: 0;
+  }
+}
+@keyframes ap-flash {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+  }
+  30%,
+  70% {
+    box-shadow: 0 0 0 2px var(--green-ink);
+  }
+}
+@utility ap-fade {
+  animation: ap-fade 0.18s ease-out;
+}
+@utility ap-slide {
+  animation: ap-slide 0.22s var(--out);
+}
+@utility ap-flash {
+  animation: ap-flash 2s ease-in-out;
 }
 
 @layer components {

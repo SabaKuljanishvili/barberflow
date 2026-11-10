@@ -50,4 +50,39 @@
   --hero-on-btn: #ffffff;
   /* Headline and header logo only; body text stays Manrope / Noto Sans Georgian. */
   --font-hero: var(--font-serif-georgian), Georgia, serif;
+
+  /*
+   * Dashboard Appointments page (2026-11-11, appointments-reference.html).
+   * Contrast: ap-ink on ap-row 16.3, ap-ink2 11.1, ap-muted 6.8, ap-faint
+   * 4.9 (the reference's #6e7471 is 3.7 on rows, so faint text is lifted),
+   * ap-pending 9.6, ap-noshow 6.9, white on --green 5.7.
+   */
+  --ap-bg: #131414;
+  --ap-card: #171818;
+  --ap-row: #1a1b1b;
+  --ap-line: #222524;
+  --ap-line2: #262928;
+  --ap-chip-line: #2e3331;
+  --ap-drawer-line: #2a2d2c;
+  --ap-hour: #1d201f;
+  --ap-closed: #151616;
+  --ap-today: rgba(24, 117, 83, 0.09);
+  --ap-sel: #16271f;
+  --ap-sel-line: #2e8a66;
+  --ap-backdrop: rgba(8, 9, 9, 0.55);
+  --ap-drawer-shadow: -20px 0 60px rgba(0, 0, 0, 0.45);
+  --ap-ink: #f3f7f4;
+  --ap-ink2: #c9cdcb;
+  --ap-muted: #9fa3a1;
+  --ap-faint: #868b89;
+  --ap-pending: #e8b86a;
+  --ap-noshow: #f08a7e;
+  --ap-on-green: #ffffff;
+  /* Barber colours, assigned by team order (lib/appointments-ui.ts). */
+  --barber-mint: #63d5a5;
+  --barber-amber: #e8b86a;
+  --barber-sky: #7fb8f0;
+  --barber-rose: #f08aa6;
+  --barber-lilac: #b79cf2;
+  --barber-sand: #d9c9a3;
 }

@@ -406,10 +406,10 @@ html:has(.bf) {
 }
 .bf .hx-in {
   box-sizing: border-box;
-  width: var(--hdr-w);
+  /* Same content edge as every .wrap section (and hero-reference.html, where
+     the hero spans the header's outer edges), not inset to the logo. */
+  width: min(1180px, calc(100% - 2 * var(--gutter)));
   margin: 0 auto 64px;
-  /* +1px: the header's border, so the text starts exactly under the logo. */
-  padding: 0 calc(var(--hdr-pr) + 1px) 0 calc(var(--hdr-pl) + 1px);
   display: flex;
   flex-direction: column;
   align-items: flex-start;
@@ -926,9 +926,12 @@ html:has(.bf) {
   border-color: var(--green);
   color: var(--on-green);
 }
+/* Wraps when the stage is narrow (phones, 961-1100px): nowrap made the
+   greeting run out of the bubble and get clipped by .stage. The caret
+   stays beside the last line. */
 .bf .tx {
   display: inline-block;
-  white-space: nowrap;
+  max-width: calc(100% - 6px);
   overflow: hidden;
   clip-path: inset(0 100% 0 0);
   animation: reveal 1.6s 0.9s steps(32) forwards;
@@ -988,6 +991,8 @@ html:has(.bf) {
   margin: 26px 0 16px;
 }
 .bf .sc-bubble {
+  box-sizing: border-box;
+  max-width: 100%;
   background: var(--surface);
   border: 1px solid var(--line2);
   border-radius: 14px;
@@ -1401,6 +1406,10 @@ html:has(.bf) {
 }
 .bf .sec-head .h2 {
   margin-bottom: 0;
+}
+/* Intro under a section heading (pricing): .p has no margin of its own. */
+.bf .sec-head .h2 + .p {
+  margin-top: 18px;
 }
 .bf .steps {
   position: relative;
@@ -2139,7 +2148,7 @@ html:has(.bf) {
   .bf .hx-in {
     width: auto;
     margin: 0 0 56px;
-    padding: 0 calc(var(--hdr-gap) + var(--hdr-pl) + 1px);
+    padding: 0 var(--gutter);
     gap: 22px;
   }
   .bf .hx-eyebrow {

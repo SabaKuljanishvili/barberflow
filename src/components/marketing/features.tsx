@@ -48,11 +48,16 @@ export function Features({ home }: { home: Home }) {
     // - the list is offset so every number, first and last included, lines
     //   up with the card's centre.
     let compactHead = 0;
+    // Lowest --stick-top: under the scrolled header (12px from the top,
+    // --hdr-h tall) plus a 16px gap, so short screens never hide the heading.
+    let headerClear = 96;
     function measure() {
       const stick = stickRef.current;
       const head = headRef.current;
       const h2 = head?.querySelector("h2");
       if (!stick || !head || !h2) return;
+      const hdrH = parseFloat(getComputedStyle(stick).getPropertyValue("--hdr-h"));
+      if (hdrH > 0) headerClear = 12 + hdrH + 16;
       const was = stick.hasAttribute("data-compact");
       h2.style.transition = "none";
       stick.setAttribute("data-compact", "");
@@ -73,7 +78,7 @@ export function Features({ home }: { home: Home }) {
       const vh = window.innerHeight;
       const card = viz.offsetHeight;
       stick.toggleAttribute("data-compact", desktop && split.getBoundingClientRect().top < vh * 0.45);
-      stick.style.setProperty("--stick-top", `${Math.max(16, Math.round(vh / 2 - compactHead - card / 2))}px`);
+      stick.style.setProperty("--stick-top", `${Math.max(headerClear, Math.round(vh / 2 - compactHead - card / 2))}px`);
       list.style.marginTop = desktop ? `${Math.max(0, Math.round(compactHead + card / 2 - first.offsetHeight / 2))}px` : "";
       list.style.paddingBottom = desktop ? `${Math.max(0, Math.round(card / 2 - last.offsetHeight / 2))}px` : "";
     }

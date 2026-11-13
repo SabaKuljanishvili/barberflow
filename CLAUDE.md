@@ -56,7 +56,8 @@
 
 ## Status (2026-10-31)
 - Done: landing redesign; all hard-coded colours replaced with tokens (every token text pair is ≥ 4.5:1); marketing footer stays at the bottom of short pages. Dark only since 2026-11-06.
-- Pending: the dashboard has not been checked visually. Lighthouse accessibility has not been run. On short desktop screens the features section's pinned heading (`--stick-top` in `features.tsx`) can sit under the floating header (it sat under the old full-width bar too).
+- Pending: the dashboard has not been checked visually. Lighthouse accessibility has not been run.
+- Layout pass (2026-11-13): the hero text uses the same content edge as every `.wrap` section (1180px max, `--gutter`), as in `hero-reference.html`; it is no longer inset to the logo. `--stick-top` never goes above the scrolled header (12px + `--hdr-h` + 16px). `.sec-head .h2 + .p` gets an 18px gap. The scene 1 greeting (`.tx`) wraps instead of being clipped on narrow stages.
 
 ## Fix (2026-11-01): managers could not save Settings
 - Cause: `20261028000000_locales.sql` added `salons.locale` without an UPDATE grant. Every Settings save writes `locale`, so it failed with `42501`, shown as "ამის გაკეთების უფლება არ გაქვთ". The phone number never saved, so the sidebar card kept the old number.

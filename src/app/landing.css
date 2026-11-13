@@ -388,8 +388,8 @@ html:has(.bf) {
  * the very top of the page, under the floating header, fills the screen
  * (760–920px) and keeps --hx-after of empty space under the ribbons, so the
  * next section's own padding stays as it was. The page background is --bg;
- * the one radial glow is masked out over the last 280px: no seam. No
- * shadows or glows anywhere in the hero.
+ * the only light is two drifting ambient spots (.amb, below), which are not
+ * clipped at the hero's bottom, so there is no seam. No shadows.
  */
 .bf .hx {
   --hx-after: 96px;
@@ -403,18 +403,6 @@ html:has(.bf) {
   padding: 180px 0 var(--hx-after);
   overflow-x: clip;
   color: var(--hero-ink);
-}
-.bf .hx-bg {
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  pointer-events: none;
-  /* One soft radial, top right; no grid, no other glow. The page's film grain
-     (background-fx.tsx) shows through, so the hero joins the next section
-     without a seam; the page-wide blobs are kept out of the hero (.b1/.b2). */
-  background: radial-gradient(60% 60% at 88% 8%, var(--hero-glow) 0%, transparent 70%);
-  -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 280px), transparent);
-  mask-image: linear-gradient(to bottom, #000 calc(100% - 280px), transparent);
 }
 .bf .hx-in {
   box-sizing: border-box;
@@ -453,47 +441,39 @@ html:has(.bf) {
   margin: 0;
   font-family: var(--font-hero);
   font-weight: 600;
-  font-size: clamp(48px, 6.4vw, 92px);
-  line-height: 1.04;
+  font-size: clamp(48px, 6.1vw, 88px);
+  line-height: 1.06;
   letter-spacing: -0.03em;
   color: var(--hero-ink);
 }
 .bf .hx-l1 {
   display: block;
 }
+/* Line 2 is one italic accent phrase, same size and weight as line 1. */
 .bf .hx-title em {
   font-style: italic;
   color: var(--green-ink);
 }
-/* The pill and its mini waveform scale with the headline (92px = 1em). */
-.bf .hx-pill {
+/* Inline mini waveform right after the period (aria-hidden). */
+.bf .hx-wave {
   display: inline-flex;
   align-items: center;
-  gap: 0.15em;
-  padding: 0.02em 0.28em 0.11em;
-  border-radius: 999px;
-  background: var(--green);
-  color: var(--hero-ink);
-  vertical-align: middle;
-  line-height: 1.05;
-  white-space: nowrap;
+  gap: 6px;
+  height: 0.62em;
+  margin-left: 22px;
 }
-.bf .hx-bars {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.054em;
-  height: 0.52em;
-}
-.bf .hx-bars i {
-  width: 0.065em;
-  height: 0.2em;
-  border-radius: 0.033em;
+.bf .hx-wave i {
+  flex: none;
+  width: 5px;
+  height: 35%;
+  border-radius: 3px;
   background: var(--green-ink);
+  animation: hx-wave 1s ease-in-out infinite;
 }
-.bf .hx-bars i:nth-child(2) { height: 0.435em; }
-.bf .hx-bars i:nth-child(3) { height: 0.283em; }
-.bf .hx-bars i:nth-child(4) { height: 0.5em; }
-.bf .hx-bars i:nth-child(5) { height: 0.217em; }
+.bf .hx-wave i:nth-child(2) { height: 80%; animation-duration: 1.15s; animation-delay: 0.1s; }
+.bf .hx-wave i:nth-child(3) { height: 55%; animation-duration: 1.3s; animation-delay: 0.2s; }
+.bf .hx-wave i:nth-child(4) { height: 100%; animation-duration: 1.45s; animation-delay: 0.3s; }
+.bf .hx-wave i:nth-child(5) { height: 45%; animation-duration: 1.6s; animation-delay: 0.4s; }
 .bf .hx-row {
   align-self: stretch;
   display: flex;
@@ -501,7 +481,8 @@ html:has(.bf) {
   align-items: flex-end;
   justify-content: space-between;
   gap: 24px 40px;
-  margin-top: 40px;
+  /* 28px under the headline: the column gap (30px) minus 2px. */
+  margin-top: -2px;
 }
 .bf .hx-sub {
   flex: 1 1 360px;
@@ -675,6 +656,68 @@ html:has(.bf) {
 }
 @keyframes hx-left { from { transform: translateX(0); } to { transform: translateX(-50%); } }
 @keyframes hx-right { from { transform: translateX(-50%); } to { transform: translateX(0); } }
+@keyframes hx-wave { 0%, 100% { transform: scaleY(0.4); } 50% { transform: scaleY(1); } }
+
+/*
+ * Home page ambient spots (components/marketing/ambient-spot.tsx): large, very
+ * soft radial gradients drifting behind the content. No blur filter; the
+ * gradient alone is soft, and the drift is transform-only.
+ * Stacking: .in is isolated on the home page and spots sit at z-index -1
+ * inside it, so every section, card and the footer paint above them without
+ * per-section z-index rules. Horizontal overflow is clipped by .amb-layer and
+ * .bf (overflow-x: clip), so there is no sideways scroll; nothing is clipped
+ * vertically, so the glow crosses section edges without a seam.
+ */
+.bf:has(.hx) > .in {
+  isolation: isolate;
+}
+/* The blurred page blobs would double the spots on the home page. */
+.bf:has(.hx) .blob {
+  display: none;
+}
+.bf .amb-host {
+  position: relative;
+}
+/* Full-bleed: the viewport's width, the host's height. */
+.bf .amb-layer {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 100vw;
+  margin-left: -50vw;
+  overflow-x: clip;
+  pointer-events: none;
+}
+.bf .amb {
+  --amb-k: 1;
+  position: absolute;
+  z-index: -1;
+  width: calc(var(--amb-size) * var(--amb-k));
+  height: calc(var(--amb-size) * var(--amb-k));
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(var(--amb-rgb), var(--amb-a)) 0%, rgba(var(--amb-rgb), 0) 66%);
+  pointer-events: none;
+  will-change: transform;
+  animation: amb-drift var(--amb-dur) ease-in-out infinite;
+}
+@keyframes amb-drift {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(40px, -30px) scale(1.06); }
+}
+@media (max-width: 1023px) {
+  .bf .amb {
+    --amb-k: 0.75;
+  }
+}
+@media (max-width: 767px) {
+  .bf .amb {
+    --amb-k: 0.55;
+  }
+  .bf .amb[data-desktop-only] {
+    display: none;
+  }
+}
 
 .bf .bf-card {
   background: color-mix(in srgb, var(--surface) 88%, transparent);

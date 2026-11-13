@@ -1,11 +1,13 @@
 import Link from "@/components/locale-link";
 import { getI18n } from "@/i18n/server";
+import { AmbientSpot } from "./ambient-spot";
 import { isoDateIn, ribbonCards } from "./demo-bookings";
 
 /**
- * Home hero: eyebrow chip, two-line serif headline with the "call" pill, sub
- * text and CTAs, then two crossing marquee ribbons. Server component; every
- * animation is CSS (landing.css, `.hx`). No glows or shadows.
+ * Home hero: eyebrow chip, two-line serif headline (line 2 italic accent with
+ * an inline mini waveform), sub text and CTAs, then two crossing marquee
+ * ribbons, over two drifting ambient spots. Server component; every animation
+ * is CSS (landing.css, `.hx` and `.amb`). No shadows.
  */
 export async function Hero() {
   const { locale, t } = await getI18n();
@@ -18,7 +20,8 @@ export async function Hero() {
 
   return (
     <section id="top" className="hx" aria-labelledby="hero-title">
-      <div className="hx-bg" aria-hidden="true" />
+      <AmbientSpot color="green" size={820} opacity={0.34} duration={20} right={-380} top={-260} />
+      <AmbientSpot color="mint" size={620} opacity={0.08} duration={26} left={-260} top={420} desktopOnly />
 
       <div className="hx-in">
         <span className="hx-eyebrow">
@@ -28,16 +31,13 @@ export async function Hero() {
         <h1 id="hero-title" className="hx-title">
           <span className="hx-l1">{h.titleBefore}</span>{" "}
           <span className="hx-l2">
-            <em>{h.titleGreen}</em>{" "}
-            <span className="hx-pill">
-              {h.titlePill}
-              <span className="hx-bars" aria-hidden="true">
-                <i />
-                <i />
-                <i />
-                <i />
-                <i />
-              </span>
+            <em>{h.titleAccent}</em>
+            <span className="hx-wave" aria-hidden="true">
+              <i />
+              <i />
+              <i />
+              <i />
+              <i />
             </span>
           </span>
         </h1>

@@ -6,6 +6,7 @@ import { Hero } from "@/components/marketing/hero";
 import { localBusinessSchema, organizationSchema, softwareSchema } from "@/lib/structured-data";
 import { site } from "@/lib/site";
 import { AgentSample } from "@/components/marketing/agent-sample";
+import { AmbientLayer, AmbientSpot } from "@/components/marketing/ambient-spot";
 import { Faq } from "@/components/marketing/faq";
 import { PricingPlans } from "@/components/marketing/pricing-plans";
 import { getI18n, pageAlternates } from "@/i18n/server";
@@ -73,11 +74,26 @@ export default async function HomePage() {
           </h2>
           <p className="p">{t.pricing.intro}</p>
         </div>
-        <PricingPlans headingLevel={3} />
-        <Faq />
+        {/* Wrappers only position the ambient spots; they add no box of their own. */}
+        <div className="amb-host">
+          <AmbientLayer>
+            <AmbientSpot color="green" size={700} opacity={0.2} duration={22} left="center" top="center" />
+          </AmbientLayer>
+          <PricingPlans headingLevel={3} />
+        </div>
+        <div className="amb-host">
+          <AmbientLayer>
+            <AmbientSpot color="mint" size={600} opacity={0.06} duration={26} left={-200} top={0} />
+          </AmbientLayer>
+          <Faq />
+        </div>
       </section>
 
-      <section className="wrap bf-cb">
+      <section className="wrap bf-cb amb-host">
+        <AmbientLayer>
+          {/* Centred low behind the CTA; it fades out behind the top of the footer. */}
+          <AmbientSpot color="green" size={900} opacity={0.38} duration={20} left="center" bottom={-300} />
+        </AmbientLayer>
         <div className="closer sr">
           <div>
             <h2 className="serif big">

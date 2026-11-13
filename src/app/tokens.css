@@ -44,7 +44,10 @@
   --hero-bar: #1a1b1b;
   --hero-bar-line: #262928;
   --hero-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
-  --hero-glow: rgba(24, 117, 83, 0.2);
+  /* Home page ambient spots (ambient-spot.tsx): r, g, b for rgba(). */
+  --spot-green: 24, 117, 83;
+  --spot-mint: 99, 213, 165;
+  --spot-teal: 20, 70, 58;
   --hero-phone: #0e0f0f;
   --hero-wave: #3e6b57;
   --hero-on-btn: #ffffff;

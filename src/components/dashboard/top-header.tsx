@@ -2,7 +2,6 @@ import Link from "next/link";
 import { Bell, ChevronDown, Search } from "lucide-react";
 import { LocaleSwitcher } from "@/components/locale-switcher";
 import { BrandMark } from "@/components/logo";
-import { ThemeToggle } from "@/components/theme/theme-toggle";
 import { INTL_LOCALE, fmt } from "@/i18n/config";
 import { getI18n } from "@/i18n/server";
 import type { StaffRole } from "@/lib/supabase/database.types";
@@ -55,7 +54,6 @@ export async function TopHeader({
       </form>
 
       <LocaleSwitcher />
-      <ThemeToggle />
 
       <details className="relative">
         <summary

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "@/components/locale-link";
 import { usePathname } from "next/navigation";
 import { Menu, X } from "lucide-react";
+import { AppLogo } from "./app-logo";
 
 type Item = { href: string; label: string };
 
@@ -13,10 +14,12 @@ type Item = { href: string; label: string };
  */
 export function MobileMenu({
   items,
+  brand,
   labels,
   children,
 }: {
   items: Item[];
+  brand: string;
   labels: { open: string; close: string; title: string; signIn: string; start: string };
   children: React.ReactNode;
 }) {
@@ -55,7 +58,10 @@ export function MobileMenu({
       >
         <div className="menu-inner">
           <div className="menu-top">
-            <span className="menu-title">{labels.title}</span>
+            <span className="menu-brand">
+              <AppLogo size={30} />
+              <span className="brand-name">{brand}</span>
+            </span>
             <button type="button" className="menu-btn" aria-label={labels.close} onClick={() => ref.current?.close()} autoFocus>
               <X aria-hidden="true" size={22} />
             </button>

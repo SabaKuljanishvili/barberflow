@@ -1,9 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Manrope, Noto_Sans_Georgian, Noto_Serif, Noto_Serif_Georgian } from "next/font/google";
-import localFont from "next/font/local";
 import { connection } from "next/server";
 import { CookieBanner } from "@/components/cookie-banner";
-import { ThemeScript } from "@/components/theme/theme-script";
 import { I18nProvider } from "@/i18n/client";
 import { OG_LOCALE } from "@/i18n/config";
 import { getI18n } from "@/i18n/server";
@@ -21,21 +19,14 @@ const georgian = Noto_Sans_Georgian({
   display: "swap",
 });
 const serif = Noto_Serif({ subsets: ["latin"], weight: ["500", "600", "700"], variable: "--font-noto-serif", display: "swap" });
+// Also the home hero headline and the header logo (--font-hero in tokens.css),
+// which use it for Latin text too. display: swap plus next/font's automatic
+// size-adjusted fallback keep the swap free of layout shift.
 const serifGeorgian = Noto_Serif_Georgian({
-  subsets: ["georgian"],
+  subsets: ["georgian", "latin"],
   weight: ["500", "600", "700"],
   variable: "--font-serif-georgian",
   display: "swap",
-});
-// Hero headline only (--font-display). Self-hosted, subset to Latin + Georgian; licence in fonts/firago/OFL.txt.
-const firago = localFont({
-  src: [
-    { path: "../fonts/firago/FiraGO-ExtraBold.woff2", weight: "800", style: "normal" },
-  ],
-  variable: "--font-firago",
-  display: "swap",
-  preload: true,
-  fallback: ["Noto Sans Georgian", "Manrope", "system-ui", "sans-serif"],
 });
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -60,12 +51,10 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
+// Dark only; the colour matches --bg in tokens.css.
 export const viewport: Viewport = {
-  themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#F2EEE5" },
-    { media: "(prefers-color-scheme: dark)", color: "#121313" },
-  ],
-  colorScheme: "light dark",
+  themeColor: "#131414",
+  colorScheme: "dark",
   width: "device-width",
   initialScale: 1,
 };
@@ -75,15 +64,13 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
   await connection();
   const { locale, t } = await getI18n();
   return (
-    // data-theme is set by ThemeScript before hydration.
+    // Dark only. The background is inline (same value as --bg) so the very
+    // first paint is dark, before any stylesheet has arrived.
     <html
       lang={locale}
-      suppressHydrationWarning
-      className={`${manrope.variable} ${georgian.variable} ${serif.variable} ${serifGeorgian.variable} ${firago.variable}`}
+      className={`${manrope.variable} ${georgian.variable} ${serif.variable} ${serifGeorgian.variable}`}
+      style={{ backgroundColor: "#131414", colorScheme: "dark" }}
     >
-      <head>
-        <ThemeScript />
-      </head>
       <body className="min-h-dvh bg-canvas text-ink">
         <I18nProvider locale={locale} messages={t.client}>
           <a

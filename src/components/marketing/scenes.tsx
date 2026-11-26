@@ -1,7 +1,7 @@
 import { Fragment } from "react";
 import type { Dictionary } from "@/i18n/dictionaries/en";
 import { useI18n } from "@/i18n/client";
-import { dateLabel, localIsoDate } from "./call-stream-data";
+import { dateLabel, localIsoDate } from "./demo-bookings";
 import { PhoneIcon } from "./phone-icon";
 
 export type SceneText = Dictionary["home"]["scenes"];

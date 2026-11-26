@@ -23,9 +23,15 @@ export const getSession = cache(async (): Promise<SessionContext | null> => {
   const userId = data?.claims.sub;
   if (!userId) return null;
 
-  const { data: row } = await supabase.from("profiles").select("*, salons(*)").eq("id", userId).maybeSingle();
+  const { data: row, error } = await supabase.from("profiles").select("*, salons(*)").eq("id", userId).maybeSingle();
+  // Access is denied either way, but a broken query or a database behind the
+  // code (migrations not applied) must not look like a deactivated member.
+  if (error) console.error("getSession: profile query failed", error.code, error.message);
+  else if (row && !("active" in row)) {
+    console.error("getSession: profiles.active is missing. Apply supabase/migrations 20261103000700+ to this project.");
+  }
   // Deactivated members have no access (RLS agrees: current_salon_id()).
-  if (!row?.salons || !row.active) return null;
+  if (!row?.salons || row.active !== true) return null;
 
   const { salons: salon, ...profile } = row;
   return { userId, profile, salon, isManager: profile.role === "manager" };

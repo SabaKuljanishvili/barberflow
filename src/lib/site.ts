@@ -24,9 +24,18 @@ export type LegalKey = (typeof legalPages)[number]["key"];
 export const LEGAL_LAST_UPDATED = "2026-10-27";
 
 /**
- * Recording of the agent taking a booking in Georgian, shown on the home
- * page above its transcript. TODO(owner): record one (e.g. on the web voice
- * agent with Azure TTS), save it as public/audio/agent-sample-ka.mp3 and set
- * this to "/audio/agent-sample-ka.mp3". While null only the transcript shows.
+ * Recording of the agent taking a booking in Georgian, played by the home
+ * page's call sample section (components/marketing/call-sample.tsx).
+ * TODO(owner): record one (e.g. on the web voice agent with Azure TTS), save
+ * it as public/audio/agent-sample-ka.mp3 and set this to
+ * "/audio/agent-sample-ka.mp3". While null the play button is disabled
+ * ("Recording coming soon") and nothing pretends to play.
  */
 export const AGENT_SAMPLE_AUDIO_SRC: string | null = null;
+
+/**
+ * Optional: the second at which each transcript line (t.sample.lines, same
+ * order) starts in the recording. With cues the playing line is highlighted;
+ * without them no line is.
+ */
+export const AGENT_SAMPLE_CUES: readonly number[] | null = null;

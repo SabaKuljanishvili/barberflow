@@ -1,17 +1,13 @@
 import type { Metadata } from "next";
 import Link from "@/components/locale-link";
-import type { CSSProperties } from "react";
 import { JsonLd } from "@/components/json-ld";
-import { CallStream } from "@/components/marketing/call-stream";
-import { isoDateIn } from "@/components/marketing/call-stream-data";
 import { Features } from "@/components/marketing/features";
-import { HeroHeadline } from "@/components/marketing/hero-headline";
-import { splitHeadline } from "@/components/marketing/hero-headline-data";
+import { Hero } from "@/components/marketing/hero";
 import { localBusinessSchema, organizationSchema, softwareSchema } from "@/lib/structured-data";
 import { site } from "@/lib/site";
 import { AgentSample } from "@/components/marketing/agent-sample";
+import { AmbientLayer, AmbientSpot } from "@/components/marketing/ambient-spot";
 import { Faq } from "@/components/marketing/faq";
-import { FeaturesCarousel } from "@/components/marketing/features-carousel";
 import { PricingPlans } from "@/components/marketing/pricing-plans";
 import { getI18n, pageAlternates } from "@/i18n/server";
 
@@ -34,9 +30,8 @@ function Arrow() {
 }
 
 export default async function HomePage() {
-  const { locale, t } = await getI18n();
+  const { t } = await getI18n();
   const h = t.home;
-  const title = { before: h.titleBefore, green: h.titleGreen, after: h.titleAfter };
   const business = localBusinessSchema();
   return (
     <>
@@ -44,43 +39,9 @@ export default async function HomePage() {
       <JsonLd data={softwareSchema(t.meta.description)} />
       {business && <JsonLd data={business} />}
 
-      <section id="top" className="wrap bf-cb hero-sec">
-        <div className="hero">
-          <div>
-            <span className="eyebrow">
-              <i aria-hidden="true" />
-              {h.eyebrow}
-            </span>
-            <HeroHeadline text={title} />
-            {/* Lede and buttons rise in just before the last letter lands. */}
-            <div style={{ "--after": `${splitHeadline(title).after}ms` } as CSSProperties}>
-              <p className="lede">{h.lede}</p>
-              <div className="ctas">
-                <Link className="bf-btn bf-btn-p" href="/signup">
-                  {h.ctaPrimary}
-                  <Arrow />
-                </Link>
-                <Link className="bf-btn bf-btn-g" href="/contact">
-                  {h.ctaSecondary}
-                </Link>
-              </div>
-              <ul className="hero-chips m-only">
-                {h.chips.map((c) => (
-                  <li key={c}>{c}</li>
-                ))}
-              </ul>
-            </div>
-          </div>
-          {/* "Today" for the booking dates, in the shop's time zone. */}
-          <CallStream text={h.callStream} locale={locale} today={isoDateIn("Asia/Tbilisi")} />
-        </div>
-      </section>
+      <Hero />
 
-      {/* One anchor for both layouts: desktop showcase, phone carousel. */}
-      <div id="features">
-        <Features home={h} />
-        <FeaturesCarousel home={h} />
-      </div>
+      <Features home={h} />
 
       <section aria-labelledby="how" className="wrap bf-cb sec">
         <div className="sec-head sr">
@@ -113,11 +74,26 @@ export default async function HomePage() {
           </h2>
           <p className="p">{t.pricing.intro}</p>
         </div>
-        <PricingPlans headingLevel={3} />
-        <Faq />
+        {/* Wrappers only position the ambient spots; they add no box of their own. */}
+        <div className="amb-host">
+          <AmbientLayer>
+            <AmbientSpot color="green" size={700} opacity={0.2} duration={22} left="center" top="center" />
+          </AmbientLayer>
+          <PricingPlans headingLevel={3} />
+        </div>
+        <div className="amb-host">
+          <AmbientLayer>
+            <AmbientSpot color="mint" size={600} opacity={0.06} duration={26} left={-200} top={0} />
+          </AmbientLayer>
+          <Faq />
+        </div>
       </section>
 
-      <section className="wrap bf-cb">
+      <section className="wrap bf-cb amb-host">
+        <AmbientLayer>
+          {/* Centred low behind the CTA; it fades out behind the top of the footer. */}
+          <AmbientSpot color="green" size={900} opacity={0.38} duration={20} left="center" bottom={-300} />
+        </AmbientLayer>
         <div className="closer sr">
           <div>
             <h2 className="serif big">

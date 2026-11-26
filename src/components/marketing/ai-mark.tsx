@@ -8,7 +8,7 @@ export const AI_MARK_VARIANT: AiMarkVariant = "orb";
 /**
  * The DevskStudio AI voice mark: a round, pure-CSS animated badge (decorative).
  * sm = 34px (call rows), lg = 40px (card header). Colours come from the site
- * tokens, so it adapts to light and dark themes.
+ * tokens (the site is dark only).
  */
 export function AiMark({ size = "sm", variant = AI_MARK_VARIANT, className }: { size?: "sm" | "lg"; variant?: AiMarkVariant; className?: string }) {
   const cls = [s.mark, s[variant], size === "lg" ? s.lg : "", className ?? ""].filter(Boolean).join(" ");

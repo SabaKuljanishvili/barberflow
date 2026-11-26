@@ -1,12 +1,18 @@
 import Link from "@/components/locale-link";
-import { BrandMark } from "@/components/logo";
 import { LocaleSwitcher } from "@/components/locale-switcher";
-import { ThemeToggle } from "@/components/theme/theme-toggle";
 import { fmt } from "@/i18n/config";
 import { getI18n } from "@/i18n/server";
 import { site } from "@/lib/site";
+import { AppLogo } from "./app-logo";
+import { HeaderBar } from "./header-bar";
 import { MobileMenu } from "./mobile-menu";
+import { NavLinks } from "./nav-links";
 
+/**
+ * Marketing header (home, pricing, contact, legal, 404): an opaque floating,
+ * sticky bar, 24px from the top (12px once scrolled, and on phones).
+ * Styles: landing.css `.bf-header`.
+ */
 export async function SiteHeader() {
   const { t } = await getI18n();
   const nav = [
@@ -16,39 +22,32 @@ export async function SiteHeader() {
     { href: "/contact", label: t.nav.contact },
   ];
   return (
-    <div className="bf-header-bar">
-      <header className="wrap bf-cb bf-header r">
+    <HeaderBar>
+      <header className="bf-header r">
         <Link href="/" className="brand" aria-label={fmt(t.meta.logoHome, { site: site.name })}>
-          <BrandMark />
+          <AppLogo size={30} />
           <span className="brand-name">{site.name}</span>
         </Link>
-        <nav className="navlinks" aria-label={t.nav.main}>
-          {nav.map((item) => (
-            <Link key={item.href} className="navlink" href={item.href}>
-              {item.label}
-            </Link>
-          ))}
-        </nav>
+        <NavLinks items={nav} label={t.nav.main} />
         <div className="hright">
           <div className="hdesk">
-            <LocaleSwitcher />
-            <ThemeToggle />
-            <Link className="navlink" href="/login">
+            <LocaleSwitcher variant="square" />
+            <Link className="hsignin" href="/login">
               {t.nav.signIn}
             </Link>
           </div>
-          <Link className="bf-btn bf-btn-p bf-btn-sm" href="/signup">
+          <Link className="hstart" href="/signup">
             {t.nav.start}
           </Link>
           <MobileMenu
             items={nav}
+            brand={site.name}
             labels={{ open: t.nav.openMenu, close: t.nav.closeMenu, title: t.nav.menu, signIn: t.nav.signIn, start: t.nav.start }}
           >
-            <LocaleSwitcher />
-            <ThemeToggle />
+            <LocaleSwitcher variant="square" />
           </MobileMenu>
         </div>
       </header>
-    </div>
+    </HeaderBar>
   );
 }
